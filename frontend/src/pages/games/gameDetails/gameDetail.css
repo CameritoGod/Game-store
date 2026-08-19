@@ -1,0 +1,301 @@
+/* CONTENEDOR PRINCIPAL */
+.game-detail-container {
+  color: white;
+  padding: 2rem;
+  /* background: linear-gradient(180deg, #1b0d36, #3D0066 80%); */
+  min-height: 100vh;
+}
+
+/* CARGANDO */
+.game-detail-loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(255,255,255,0.2);
+  border-top: 5px solid #7A2CFF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* CARRUSEL DE IMÁGENES */
+.image-carousel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.main-game-image {
+  width: 100%;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+}
+
+.thumbnails {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.3s, transform 0.2s;
+}
+
+.thumbnail:hover,
+.active-thumb {
+  border: 2px solid #6c5ce7;
+  transform: scale(1.05);
+}
+
+/* INFO DEL JUEGO */
+.game-contenedor-details-info {
+  background: #111827;
+  border-radius: 20px;
+  padding: 24px;
+  height: auto;
+}
+
+.game-detail-info {
+  background: linear-gradient(
+    180deg,
+    rgba(61,0,102,0.4),
+    rgba(0,0,0,0.6)
+  );
+  border-radius: 20px;
+  padding: 28px;
+}
+
+.game-actions button {
+  min-width: 180px;
+}
+
+.game-title {
+  font-size: 2.4rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.game-meta {
+  display: flex;
+  gap: 20px;
+  margin: 12px 0;
+  opacity: 0.85;
+  flex-wrap: wrap;
+}
+
+.game-meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.game-genres {
+  margin-bottom: 15px;
+}
+
+.genre-badge {
+  display: inline-block;
+  background: rgba(61,0,102,0.6);
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-right: 8px;
+  margin-top: 5px;
+  font-size: 0.85rem;
+}
+
+.game-description {
+  margin-top: 1rem;
+  line-height: 1.65;
+  opacity: 0.9;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.game-description.expanded {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.game-price {
+  font-size: 2rem;
+  color: #7A2CFF;
+  margin: 20px 0;
+  font-weight: bold;
+}
+
+.game-actions {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+/* TRAILER */
+.trailer-section h3 {
+  margin-bottom: 15px;
+}
+
+.trailer-box {
+  background: rgba(0,0,0,0.5);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+}
+
+/* JUEGOS RELACIONADOS */
+.related-games {
+  margin-top: 40px;
+}
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 15px;
+}
+
+.related-card {
+  background: var(--bg-secondary);
+  padding: 12px;
+  border-radius: 16px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+
+}
+
+.related-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px #111827;
+}
+
+.related-card img {
+  width: 100%;
+  height: 160px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+/* REVIEWS */
+.reviews {
+  margin-top: 40px;
+}
+
+.reviews-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.review-card {
+  background: rgba(0,0,0,0.5);
+  padding: 14px;
+  border-radius: 16px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+}
+
+.review-star{
+  font-size: 0.7rem;
+}
+
+/* RESPONSIVE */
+@media (width > 992px){
+  .main-game-image{
+    height: 500px;
+  }
+}
+
+@media (max-width: 992px) {
+  .game-title {
+    font-size: 2rem;
+  }
+  .game-price {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-detail-container {
+    padding: 1rem;
+  }
+  .game-detail-info {
+    margin-top: 20px;
+  }
+  .thumbnails {
+    justify-content: center;
+  }
+}
+
+@media (width < 769){
+  .reviews-list{
+    background: red;
+  }
+}
+
+
+
+/* Animación al cambiar imagen */
+.fade-image {
+  animation: fadeInImg 0.35s ease-in-out;
+}
+
+@keyframes fadeInImg {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Hover zoom */
+.main-game-image {
+  transition: transform 0.3s ease;
+}
+
+.main-game-image:hover {
+  transform: scale(1.02);
+}
+
+/* Thumbnails */
+.thumbnail {
+  opacity: 0.7;
+}
+
+.thumbnail:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.active-thumb {
+  opacity: 1;
+  border-color: #7A2CFF;
+}

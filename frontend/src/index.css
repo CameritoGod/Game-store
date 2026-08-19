@@ -1,0 +1,43 @@
+:root{
+    --bg-primary: #0E0E10;      /* Fondo principal (casi negro) */
+    --bg-secondary: #1A1A1D;    /* Tarjetas, navbar, secciones */
+
+    --text-primary: #FFFFFF;   /* Texto principal */
+    --text-secondary: #B3B3B3; /* Texto secundario */
+    --text-muted: #8A8A8A;     /* Descripciones pequeñas */
+
+    --accent-primary: #2D6BFF; /* Azul Epic-style (comprar, hover) */
+    --accent-hover: #1F55D8;  /* Hover de botones */
+
+    --success: #21C55D;  /* Compra exitosa */
+    --warning: #FACC15;  /* Advertencias */
+    --danger: #EF4444;   /* Errores / cancelar */
+
+    --border-color: #2A2A2E;
+    --divider: #242428;
+
+    --neon-blue: #00E5FF;
+    --purple-glow: #7C3AED;
+}
+
+@font-face {
+    font-family: 'Bartle';
+    src: url('./assets/fonts/BBH_Bartle/BBHBartle-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Bebas_Neues';
+    src: url('./assets/fonts/Bebas_Neues/BebasNeue-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+html, body {
+  background-color: var(--bg-primary) !important;
+  margin: 0;
+  padding: 0;
+}

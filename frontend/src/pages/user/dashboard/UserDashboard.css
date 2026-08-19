@@ -1,0 +1,305 @@
+.user-dashboard {
+  padding: 40px;
+  background: var(--bg-primary);
+  color: white;
+
+  height: calc(100vh - 80px); 
+  overflow: hidden;
+}
+
+/* TITULO */
+.ud-title {
+  font-weight: 600;
+  letter-spacing: .5px;
+}
+
+/* CARD BASE */
+.ud-card {
+  background: linear-gradient(
+    180deg,
+    rgba(21,21,28,.95),
+    rgba(14,14,16,1)
+  );
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(122,44,255,.15);
+  box-shadow:
+    inset 0 0 40px rgba(61,0,102,.15),
+    0 10px 30px rgba(0,0,0,.5);
+}
+
+/* PERFIL */
+.ud-profile {
+  text-align: center;
+}
+
+.ud-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  object-fit: cover;
+  background:
+    linear-gradient(#0E0E10, #0E0E10) padding-box,
+    linear-gradient(135deg, #3d0066, #7a2cff) border-box;
+  border: 3px solid transparent;
+}
+
+.ud-email {
+  color: #aaa;
+  font-size: .9rem;
+}
+
+/* BOTONES */
+.ud-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.ud-btn-primary {
+  background: linear-gradient(135deg, #3d0066, #7a2cff);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-weight: 600;
+  transition: all .3s ease;
+}
+
+.ud-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(122,44,255,.6);
+}
+
+.ud-btn-outline {
+  background: linear-gradient(135deg, #3d0066d5, #792cff69);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-weight: 600;
+  transition: all .3s ease;
+}
+
+.ud-btn-danger {
+  background: transparent;
+  border: 1px solid #ff4d4d;
+  color: #ff4d4d;
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-weight: 600;
+}
+
+/* INPUTS */
+.ud-input {
+  background: #0E0E10 !important;
+  color: white !important;
+  border: 1px solid #2a2a2e !important;
+}
+
+/* EYE */
+.ud-eye-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #bbb;
+}
+
+/* SECCIONES */
+.ud-section-title {
+  font-family: bebas_neues, sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ud-section-title::after {
+  content: "Desliza →";
+  margin-left: auto;
+  font-size: .8rem;
+  color: #b98cff;
+  opacity: .8;
+  animation: swipeHint 1.5s infinite;
+}
+
+/* GRID JUEGOS */
+.ud-games-grid {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 10px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ud-game-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.05);
+  transition: transform .3s ease, box-shadow .3s ease;
+
+  flex: 0 0 auto;
+  width: 220px;
+  scroll-snap-align: start;
+
+  animation: fadeUp 0.5s ease forwards;
+}
+
+.ud-game-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 35px rgba(0,0,0,.6);
+}
+
+.ud-game-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.ud-game-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.9), rgba(0,0,0,.2));
+  opacity: 0.6;
+  transition: opacity .3s ease;
+}
+
+.ud-game-card:hover::after {
+  opacity: 0.9;
+}
+
+
+.ud-game-info {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 14px;
+  z-index: 2;
+  text-align: center;
+
+  transform: translateY(10px);
+  transition: transform .3s ease;
+}
+
+.ud-game-card:hover .ud-game-info {
+  transform: translateY(0);
+}
+
+/* Scroll */
+.ud-games-grid::-webkit-scrollbar {
+  height: 6px;
+}
+
+
+.ud-games-grid::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+}
+
+
+.ud-games-grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    90deg,
+    #3d0066,
+    #7a2cff
+  );
+  border-radius: 10px;
+  } 
+
+
+.ud-games-grid {
+  scrollbar-width: thin;
+  scrollbar-color: #7a2cff rgba(255,255,255,0.05);
+}
+
+
+.delete-favorite-btn {
+  border-radius: 50% !important;
+  width: 32px;
+  height: 32px;
+  z-index: 10;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px) scale(0.9);
+  transition: all 0.25s ease;
+}
+
+.ud-game-card:hover {
+  transform: translateY(-10px) scale(1.03);
+  box-shadow:
+    0 20px 40px rgba(0,0,0,.6),
+    0 0 30px rgba(122,44,255,.25);
+}
+
+.ud-game-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top, rgba(122,44,255,.25), transparent 60%);
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+
+.ud-game-card:hover::before {
+  opacity: 1;
+}
+
+.ud-game-card:hover .delete-favorite-btn {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1.05);
+}
+
+.delete-favorite-btn:hover {
+  box-shadow: 0 0 15px rgba(255, 77, 77, 0.7);
+  transform: scale(1.1);
+}
+
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .user-dashboard {
+    padding: 20px;
+    overflow: auto;
+  }
+
+  .ud-avatar {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+@media (hover: none) {
+  .delete-favorite-btn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}
+
+/* ANIMACION DESLIZA */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

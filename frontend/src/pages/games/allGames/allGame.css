@@ -1,0 +1,39 @@
+.allgames-container {
+  min-height: 100vh;
+  background: linear-gradient(
+    180deg,
+    #0e0e11 0%,
+    #14141c 100%
+  );
+}
+
+.allgames-header h2 {
+  font-size: 1.5rem;
+  font-family: Bartle, sans-serif;
+}
+
+.allgames-header p {
+  max-width: 500px;
+  font-family: bebas_neues, sans-serif;
+}
+
+/* Paginación */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 3rem 0;
+}
+
+.page-indicator {
+  color: #b5b5c3;
+  font-weight: 500;
+}
+
+/* Responsive tweaks */
+@media (max-width: 576px) {
+  .pagination-container {
+    flex-direction: column;
+  }
+}

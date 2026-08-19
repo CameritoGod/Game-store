@@ -1,0 +1,61 @@
+/* BACKDROP */
+.fp-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+}
+
+/* MODAL */
+.fp-modal {
+  background: #0f0f1a !important;
+  border-radius: 26px !important;
+  box-shadow: 0 0 30px rgba(61, 0, 102, 0.5);
+  color: white;
+  min-height: 250px;
+}
+
+.modal-content{
+  padding: 15px;
+}
+
+/* BOTONES */
+.fp-btn {
+  background: #3D0066 !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+}
+
+.fp-btn:hover {
+  background: #52008a !important;
+  transform: translateY(-1px);
+}
+
+/* PASSWORD INPUT */
+.fp-password-wrapper {
+  position: relative;
+}
+
+.fp-password-wrapper input {
+  padding-right: 45px;
+}
+
+/* OJO */
+.fp-eye {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #5e24f2;
+  transition: color 0.2s ease;
+}
+
+.fp-eye:hover {
+  color: black;
+}

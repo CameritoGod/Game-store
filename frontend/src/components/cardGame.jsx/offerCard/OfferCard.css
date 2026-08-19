@@ -1,0 +1,86 @@
+.offer-card {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(61, 0, 102, 0.35),
+    rgba(0, 0, 0, 0.85)
+  );
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 0 25px rgba(61, 0, 102, 0.35);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.offer-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 0 35px rgba(122, 44, 255, 0.6);
+}
+
+/* Discount badge */
+.discount-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: #ff3b3b;
+  color: #fff;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  z-index: 2;
+}
+
+/* Image */
+.offer-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+/* Content */
+.offer-content {
+  padding: 16px;
+  color: white;
+}
+
+.offer-content h4 {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+/* Prices */
+.prices {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.old-price {
+  color: #aaa;
+  text-decoration: line-through;
+  font-size: 0.9rem;
+}
+
+.new-price {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #b98cff;
+}
+
+/* Button */
+.btn-offer {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #3d0066, #7a2cff);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.btn-offer:hover {
+  opacity: 0.85;
+}

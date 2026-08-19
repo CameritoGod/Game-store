@@ -1,0 +1,138 @@
+/* Importamos el CSS real para heredar el Grid y Layouts */
+@import "../cardTendencia/CardTendencia.css";
+
+/* Base Animation (Shimmer) */
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+.skeleton-tendencia .skeleton-line,
+.skeleton-tendencia .skeleton-img-mini {
+  background: #1f2937; /* Color base oscuro */
+  background-image: linear-gradient(
+    to right,
+    #1f2937 0%,
+    #374151 20%, 
+    #1f2937 40%,
+    #1f2937 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 800px 100%;
+  display: inline-block;
+  position: relative;
+  animation-duration: 1.5s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  animation-name: shimmer;
+  animation-timing-function: linear;
+  border-radius: 4px;
+}
+
+/* Ajustes específicos para que el layout real no choque con el skeleton */
+.skeleton-main {
+  background: #111827; /* Fondo oscuro mientras carga */
+}
+
+.skeleton-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9),
+    rgba(0, 0, 0, 0.5)
+  ) !important;
+}
+
+/* Estilos de las líneas de carga (replicando tamaños del texto real) */
+.badge-skeleton {
+  width: 100px;
+  height: 20px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.title-skeleton {
+  width: 70%;
+  height: 38px; /* Similar a h2 */
+  margin-bottom: 5px;
+}
+
+.genre-skeleton {
+  width: 30%;
+  height: 18px;
+}
+
+.desc-skeleton {
+  width: 65%;
+  height: 14px;
+  margin-top: 10px;
+}
+.desc-skeleton.short {
+  width: 40%;
+  margin-top: 5px;
+}
+
+.skeleton-info {
+  gap: 20px;
+}
+.info-item {
+  width: 60px;
+  height: 16px;
+}
+.price-item {
+  width: 80px;
+  height: 20px;
+  background-image: linear-gradient(to right, #1a4d2e 0%, #22c55e 20%, #1a4d2e 40%, #1a4d2e 100%) !important; /* Tono verde */
+}
+
+.skeleton-actions {
+  gap: 12px;
+}
+.btn-skeleton {
+  width: 130px;
+  height: 38px;
+  border-radius: 6px;
+}
+
+/* Mini Cards Skeleton */
+.skeleton-mini {
+  cursor: default !important;
+  background: #111827 !important;
+  border: 1px solid transparent !important;
+}
+
+.skeleton-img-mini {
+  width: 60px;
+  height: 80px;
+  border-radius: 8px;
+}
+
+.skeleton-text-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.mini-title {
+  width: 90%;
+  height: 16px;
+}
+
+.mini-subtitle {
+  width: 50%;
+  height: 14px;
+}
+
+/* Asegurar compatibilidad responsive */
+@media (max-width: 992px) {
+  .skeleton-list {
+    overflow: hidden; /* Evitar scrollbar en carga */
+  }
+  .skeleton-mini {
+    min-width: 200px;
+  }
+}
