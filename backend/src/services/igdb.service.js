@@ -150,12 +150,7 @@ class IGDBService {
     const cacheKey = `search_${query}_${limit}`; 
     const cached = cache.get(cacheKey); 
     if (cached) { console.log('📦 Respuesta desde caché'); return cached; }
-     /* * IMPORTANTE: * 
-     * IGDB NO permite utilizar `sort` junto con `search`. * 
-     * Cuando usamos: * 
-     * * search "zelda"; * 
-     * * IGDB ordena automáticamente por relevancia. * 
-     * * Por eso dejamos sort vacío. */ 
+
     const results = await this.query( 'games', fields, '', limit, '', query ); 
     const transformed = results.map(game => 
         ({ 
@@ -268,6 +263,137 @@ class IGDBService {
           perspective => perspective.name
         ) || []
     };
+
+    cache.set(cacheKey, transformed);
+    return transformed;
+  }
+
+  // ==========================================
+  // Juegos Trending
+  // ==========================================
+  async getTrendingGames(limit = 5) {
+    const cacheKey = `trending_${limit}`;
+    const cached = cache.get(cacheKey);
+
+    if (cached) {
+      console.log('Trending desde caché');
+      return cached;
+    }
+
+    // ==========================================
+    // Obtener juegos más populares
+    // según visitas de IGDB
+    // ==========================================
+    const popularityFields = ['game_id', 'value', 'popularity_type'].join(',');
+    const popularityWhere = 'popularity_type = 1';
+    const popularitySort = 'value desc';
+    const popularityResults = await this.query(
+      'popularity_primitives',
+      popularityFields,
+      popularityWhere,
+      limit,
+      popularitySort
+    );
+
+    if (!popularityResults || popularityResults.length === 0) {
+      return [];
+    }
+
+    // ==========================================
+    // Obtener IDs de los juegos
+    // ==========================================
+    const gameIds = popularityResults.map(item => item.game_id).filter(Boolean);
+
+    if (gameIds.length === 0) {
+      return [];
+    }
+
+    // ==========================================
+    // Obtener información de esos juegos
+    // ==========================================
+    const gameFields = [
+      'id',
+      'name',
+      'cover.image_id',
+      'first_release_date',
+      'total_rating',
+      'aggregated_rating'
+    ].join(',');
+    const gameWhere = `id = (${gameIds.join(',')})`;
+    const games = await this.query('games', gameFields, gameWhere, limit);
+
+    // ==========================================
+    // Mantener el orden de popularidad
+    // ==========================================
+    const popularityMap = new Map(
+      popularityResults.map(item => [item.game_id, item.value])
+    );
+
+    games.sort((a, b) => {
+      const popularityA = popularityMap.get(a.id) ?? 0;
+      const popularityB = popularityMap.get(b.id) ?? 0;
+      return popularityB - popularityA;
+    });
+
+    // ==========================================
+    // Transformar respuesta
+    // ==========================================
+    const transformed = games.map(game => ({
+      id: game.id,
+      name: game.name,
+      cover: game.cover?.image_id
+        ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${game.cover.image_id}.jpg`
+        : null,
+      releaseDate: game.first_release_date
+        ? new Date(game.first_release_date * 1000).getFullYear()
+        : 'TBD',
+      rating: game.total_rating ?? 0,
+      aggregatedRating: game.aggregated_rating ?? 0,
+      popularity: popularityMap.get(game.id) ?? 0
+    }));
+
+    cache.set(cacheKey, transformed);
+    return transformed;
+  }
+
+  // ==========================================
+  // Juegos mejor valorados
+  // ==========================================
+  async getTopRatedGames(limit = 5) {
+    const fields = [
+      'id',
+      'name',
+      'cover.image_id',
+      'first_release_date',
+      'total_rating',
+      'aggregated_rating'
+    ].join(',');
+
+    const cacheKey = `top_rated_${limit}`;
+    const cached = cache.get(cacheKey);
+
+    if (cached) {
+      console.log('📦 Top Rated desde caché');
+      return cached;
+    }
+
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const where = `first_release_date < ${currentTimestamp} & total_rating != null`;
+    const sort = 'total_rating desc';
+    const results = await this.query('games', fields, where, limit, sort);
+
+    const transformed = results.map(game => ({
+      id: game.id,
+      name: game.name,
+      cover: game.cover?.image_id
+        ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${game.cover.image_id}.jpg`
+        : null,
+      releaseDate: game.first_release_date
+        ? new Date(game.first_release_date * 1000).getFullYear()
+        : 'TBD',
+      rating: game.total_rating ?? 0,
+      aggregatedRating: game.aggregated_rating ?? 0
+    }));
 
     cache.set(cacheKey, transformed);
     return transformed;
