@@ -159,7 +159,7 @@ class IGDBService {
     const results = await this.query( 'games', fields, '', limit, '', query ); 
     const transformed = results.map(game => 
         ({ 
-            id: game.id, 
+            id: game.id,  
             name: game.name, 
             cover: game.cover?.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${game.cover.image_id}.jpg` : null, 
             summary: game.summary || 'Sin descripción disponible', 
