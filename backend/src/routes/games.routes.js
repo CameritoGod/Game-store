@@ -11,6 +11,12 @@ router.get('/top-rated', gamesController.getTopRatedGames);
 // Juegos Trending
 router.get('/trending', gamesController.getTrendingGames);
 
+// Obtener géneros
+router.get( '/genres', gamesController.getGenres );
+
+// Juegos para explorar (con paginación y filtrado por género)
+router.get( '/explore', gamesController.getAllGames );
+
 // Juego por ID
 router.get('/:id', gamesController.getGameById);
 

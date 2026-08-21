@@ -71,36 +71,45 @@ class IGDBService {
     where = '',
     limit = 20,
     sort = '',
-    search = ''
+    search = '',
+    offset = 0
   ) {
     const token = await this.getAccessToken();
-    let queryParts = [];
+    const queryParts = [];
 
     // SEARCH
     if (search) {
       const safeSearch = String(search)
         .replace(/\\/g, '\\\\')
         .replace(/"/g, '\\"');
-
       queryParts.push(`search "${safeSearch}"`);
     }
 
     // FIELDS
     queryParts.push(`fields ${fields}`);
+
     // WHERE
     if (where) {
       queryParts.push(`where ${where}`);
     }
+
     // SORT
-    if (sort) {
+    // IGDB no permite sort junto con search
+    if (sort && !search) {
       queryParts.push(`sort ${sort}`);
     }
-    // LIMIT
-    queryParts.push(`limit ${Math.min(Number(limit) || 20, 50)}`);
 
-    // APICalypse
+    // LIMIT
+    const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 50);
+    queryParts.push(`limit ${safeLimit}`);
+
+    // OFFSET
+    const safeOffset = Math.max(Number(offset) || 0, 0);
+    queryParts.push(`offset ${safeOffset}`);
+
+    // CONSTRUIR APICALYPSE
     const queryStr = queryParts
-      .map(part => `${part};`)
+      .map((part) => `${part};`)
       .join(' ');
 
     console.log('📤 Consulta IGDB:');
@@ -113,10 +122,10 @@ class IGDBService {
         {
           headers: {
             'Client-ID': this.clientId,
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-            'Content-Type': 'text/plain'
-          }
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+            'Content-Type': 'text/plain',
+          },
         }
       );
 
@@ -194,6 +203,8 @@ class IGDBService {
     ].join(',');
 
     const where = `id = ${Number(id)}`;
+    
+    // Cache
     const cacheKey = `game_${id}`;
     const cached = cache.get(cacheKey);
     if (cached) {
@@ -235,8 +246,6 @@ class IGDBService {
         0,
       aggregatedRating:
         game.aggregated_rating ?? 0,
-      popularity:
-        game.popularity ?? 0,
       websites:
         game.websites?.map(
           website => website.url
@@ -299,18 +308,14 @@ class IGDBService {
       return [];
     }
 
-    // ==========================================
     // Obtener IDs de los juegos
-    // ==========================================
     const gameIds = popularityResults.map(item => item.game_id).filter(Boolean);
 
     if (gameIds.length === 0) {
       return [];
     }
 
-    // ==========================================
     // Obtener información de esos juegos
-    // ==========================================
     const gameFields = [
       'id',
       'name',
@@ -322,9 +327,7 @@ class IGDBService {
     const gameWhere = `id = (${gameIds.join(',')})`;
     const games = await this.query('games', gameFields, gameWhere, limit);
 
-    // ==========================================
     // Mantener el orden de popularidad
-    // ==========================================
     const popularityMap = new Map(
       popularityResults.map(item => [item.game_id, item.value])
     );
@@ -335,9 +338,7 @@ class IGDBService {
       return popularityB - popularityA;
     });
 
-    // ==========================================
     // Transformar respuesta
-    // ==========================================
     const transformed = games.map(game => ({
       id: game.id,
       name: game.name,
@@ -393,6 +394,96 @@ class IGDBService {
         : 'TBD',
       rating: game.total_rating ?? 0,
       aggregatedRating: game.aggregated_rating ?? 0
+    }));
+
+    cache.set(cacheKey, transformed);
+    return transformed;
+  }
+
+  // ==========================================
+  // Explorar todos los juegos
+  // ==========================================
+  async getAllGames(limit = 20, offset = 0, genreId = null) {
+    const fields = [
+      'id',
+      'name',
+      'cover.image_id',
+      'first_release_date',
+      'genres.name',
+      'platforms.name',
+      'total_rating',
+      'aggregated_rating'
+    ].join(',');
+
+    // CACHE
+    const cacheKey = `all_games_${limit}_${offset}_${genreId || 'all'}`;
+    const cached = cache.get(cacheKey);
+
+    if (cached) {
+      console.log('📦 All Games desde caché');
+      return cached;
+    }
+
+    // fecha actual
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+
+    // Filtro base
+    let where = `first_release_date < ${currentTimestamp}`;
+
+    // Filtro de genero
+    if (genreId !== null) {
+      const parsedGenreId = Number(genreId);
+
+      if (!Number.isInteger(parsedGenreId) || parsedGenreId <= 0) {
+        throw new Error('ID de género inválido');
+      }
+
+      where += ` & genres = ${parsedGenreId}`;
+    }
+
+    // orden
+    const sort = 'first_release_date desc';
+
+    // Consulta
+    const results = await this.query('games', fields, where, limit, sort, '', offset);
+
+    // Transformar respuesta
+    const transformed = results.map((game) => ({
+      id: game.id,
+      name: game.name,
+      cover: game.cover?.image_id
+        ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${game.cover.image_id}.jpg`
+        : null,
+      releaseDate: game.first_release_date
+        ? new Date(game.first_release_date * 1000).getFullYear()
+        : 'TBD',
+      genres: game.genres?.map((genre) => genre.name) || [],
+      platforms: game.platforms?.map((platform) => platform.name) || [],
+      rating: game.total_rating ?? 0,
+      aggregatedRating: game.aggregated_rating ?? 0
+    }));
+
+    cache.set(cacheKey, transformed);
+    return transformed;
+  }
+
+  // Obtener géneros 
+  async getGenres() {
+    const cacheKey = 'genres';
+    const cached = cache.get(cacheKey);
+
+    if (cached) {
+      console.log('Géneros desde caché');
+      return cached;
+    }
+
+    const fields = ['id', 'name', 'slug'].join(',');
+    const results = await this.query('genres', fields, '', 50, 'name asc');
+
+    const transformed = results.map((genre) => ({
+      id: genre.id,
+      name: genre.name,
+      slug: genre.slug
     }));
 
     cache.set(cacheKey, transformed);
