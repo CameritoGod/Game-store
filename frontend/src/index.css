@@ -29,8 +29,16 @@
 }
 
 @font-face {
+    font-family: 'bebas_neues';
+    src: url('./assets/fonts/Bebas_Neue/BebasNeue-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
     font-family: 'Bebas_Neues';
-    src: url('./assets/fonts/Bebas_Neues/BebasNeue-Regular.ttf') format('truetype');
+    src: url('./assets/fonts/Bebas_Neue/BebasNeue-Regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;

@@ -20,7 +20,14 @@ export default function CardGame({
     <motion.div className="card-game-wrapper">
       <div className="card game-card bg-dark text-white">
         <div className="game-image-wrapper">
-          <img src={image} alt={title} />
+          <img
+            src={image || "/nulls/placeholder-game.svg"}
+            alt={title}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "/nulls/placeholder-game.svg";
+            }}
+          />
         </div>
 
         <div className="card-body d-flex flex-column">

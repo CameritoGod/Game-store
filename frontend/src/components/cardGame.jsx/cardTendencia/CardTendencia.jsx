@@ -1,18 +1,25 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
 /**
- * Helper para formatear URLs de imágenes de IGDB a alta resolución.
- * @param {string} url - URL relativa provista por la API.
+ * Helper para formatear URLs de imágenes de IGDB a alta resolución o devolver placeholder.
+ * @param {string|Object} cover - URL de portada o de objeto provisto por la API.
  * @param {string} size - Tamaño deseado (ej. t_cover_big, t_1080p).
  * @returns {string} URL formateada completa.
  */
-const formatIgdbImage = (url, size = "t_1080p") => {
-  if (!url) return "https://via.placeholder.com/1080x720?text=No+Image";
-  return url.replace("//", "https://").replace("t_thumb", size);
+const formatIgdbImage = (cover, size = "t_1080p") => {
+  const rawUrl = typeof cover === "string" ? cover : cover?.url;
+  if (!rawUrl) return "/nulls/placeholder-game.svg";
+  let cleanUrl = rawUrl.startsWith("//") ? `https:${rawUrl}` : rawUrl;
+  if (cleanUrl.includes("/t_")) {
+    cleanUrl = cleanUrl.replace(/\/t_[a-z0-9_]+\//, `/${size}/`);
+  }
+  return cleanUrl;
 };
 
 export default function CardTendencia({ games }) {
+  const navigate = useNavigate();
   // Estado para rastrear el juego seleccionado en la tarjeta principal
   const [selectedGameIndex, setSelectedGameIndex] = useState(0);
 
@@ -29,7 +36,7 @@ export default function CardTendencia({ games }) {
         <div
           className="tendencia-media image"
           style={{
-            backgroundImage: `url(${formatIgdbImage(currentGame.cover?.url, "t_1080p")})`
+            backgroundImage: `url(${formatIgdbImage(currentGame.cover || currentGame.coverUrl, "t_1080p")})`
           }}
         />
         
@@ -41,7 +48,7 @@ export default function CardTendencia({ games }) {
           
           <p className="genre mb-1">
             {currentGame.genres
-              ? currentGame.genres.map((g) => g.name).join(", ")
+              ? currentGame.genres.map((g) => (typeof g === 'string' ? g : g.name)).join(", ")
               : "Sin género especificado"}
           </p>
 
@@ -60,7 +67,12 @@ export default function CardTendencia({ games }) {
           </div>
 
           <div className="tendencia-actions">
-            <button className="btn btn-primary px-4">Ver detalles</button>
+            <button
+              className="btn btn-primary px-4"
+              onClick={() => navigate(`/game/${currentGame.id}`)}
+            >
+              Ver detalles
+            </button>
           </div>
         </div>
       </div>
@@ -74,8 +86,12 @@ export default function CardTendencia({ games }) {
             onClick={() => setSelectedGameIndex(index)}
           >
             <img
-              src={formatIgdbImage(game.cover?.url, "t_cover_big")}
+              src={formatIgdbImage(game.cover || game.coverUrl, "t_cover_big")}
               alt={game.name}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/nulls/placeholder-game.svg";
+              }}
             />
             <div className="d-flex flex-column justify-content-center">
               <h6>{game.name}</h6>

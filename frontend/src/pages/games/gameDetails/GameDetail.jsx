@@ -156,10 +156,14 @@ export default function GameDetail() {
 
             {/* Imagen principal */}
             <img
-              src={mainImage}
+              src={mainImage || "/nulls/placeholder-game.svg"}
               alt={game.name}
               className="main-game-image fade-image"
               key={mainImage} // fuerza animación al cambiar
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/nulls/placeholder-game.svg";
+              }}
             />
 
             {/* Thumbnails */}
@@ -172,12 +176,16 @@ export default function GameDetail() {
                 .map((img, i) => (
                   <img
                     key={i}
-                    src={img}
+                    src={img || "/nulls/placeholder-game.svg"}
                     alt={`thumb-${i}`}
                     className={`thumbnail ${
                       img === mainImage ? "active-thumb" : ""
                     }`}
                     onClick={() => setMainImage(img)}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/nulls/placeholder-game.svg";
+                    }}
                   />
                 ))}
             </div>

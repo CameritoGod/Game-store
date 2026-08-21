@@ -7,28 +7,32 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 import { getPurchases } from "../../api/userApi";
+import { getGenres } from "../../api/api";
 
 export default function Sidebar({ open, onClose }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-
   const [library, setLibrary] = useState([]);
+  const [genres, setGenres] = useState([]);
 
-    useEffect(() => {
-      if (!user) return;
-      getPurchases().then(setLibrary);
-    }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    getPurchases().then(setLibrary);
+  }, [user]);
 
+  useEffect(() => {
+    getGenres().then(setGenres);
+  }, []);
 
-  const filterNavigate = (genre) => {
-    navigate(`/allgame?genre=${genre}&page=1`);
+  const filterNavigate = (genreId) => {
+    navigate(`/AllGame?genre=${genreId}&page=1`);
     onClose();
   };
 
   const handleSearch = (e) => {
     if (e.key === "Enter" && search.trim()) {
-      navigate(`/allgame?search=${search}&page=1`);
+      navigate(`/AllGame?search=${encodeURIComponent(search.trim())}&page=1`);
       setSearch("");
       onClose();
     }
@@ -93,26 +97,32 @@ export default function Sidebar({ open, onClose }) {
         <div className="sidebar-section">
           <h6>Categorías</h6>
           <ul>
-            <li onClick={() => filterNavigate("action")}>
-              <i className="bi bi-lightning"></i>
-              Acción
-            </li>
-            <li onClick={() => filterNavigate("5")}>
-              <i className="bi bi-controller"></i>
-              RPG
-            </li>
-            <li onClick={() => filterNavigate("shooter")}>
-              <i className="bi bi-crosshair"></i>
-              Shooter
-            </li>
-            <li onClick={() => filterNavigate("indie")}>
-              <i className="bi bi-puzzle"></i>
-              Indie
-            </li>
-            <li onClick={() => filterNavigate("strategy")}>
-              <i className="bi bi-diagram-3"></i>
-              Estrategia
-            </li>
+            {genres && genres.length > 0 ? (
+              genres.slice(0, 8).map((g) => (
+                <li key={g.id} onClick={() => filterNavigate(g.id)}>
+                  <i className="bi bi-controller"></i>
+                  {g.name}
+                </li>
+              ))
+            ) : (
+              <>
+                <li onClick={() => filterNavigate("4")}>
+                  <i className="bi bi-lightning"></i> Acción
+                </li>
+                <li onClick={() => filterNavigate("12")}>
+                  <i className="bi bi-controller"></i> RPG
+                </li>
+                <li onClick={() => filterNavigate("5")}>
+                  <i className="bi bi-crosshair"></i> Shooter
+                </li>
+                <li onClick={() => filterNavigate("32")}>
+                  <i className="bi bi-puzzle"></i> Indie
+                </li>
+                <li onClick={() => filterNavigate("15")}>
+                  <i className="bi bi-diagram-3"></i> Estrategia
+                </li>
+              </>
+            )}
           </ul>
         </div>
 

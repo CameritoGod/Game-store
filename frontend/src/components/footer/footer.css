@@ -79,78 +79,224 @@ a{
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(8, 8, 14, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  padding: 20px;
+  padding: 16px;
 }
 
-/* 📦 Contenido del Modal */
+/* 📦 Contenido del Modal Rediseñado */
 .modal-content {
-  background: #1a1a2e !important;
-  border-radius: 12px;
-  max-width: 600px;
+  background: linear-gradient(145deg, #12121a 0%, #191926 100%) !important;
+  border-radius: 20px;
+  max-width: 650px;
   width: 100%;
   max-height: 85vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  border: 1px solid #333;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(124, 58, 237, 0.2);
+  border: 1px solid rgba(124, 58, 237, 0.35);
+  animation: modalZoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Scrollbar Personalizada para Modal */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(18, 18, 26, 0.6);
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #2d6bff, #7c3aed);
+  border-radius: 10px;
 }
 
 /* ❌ Botón cerrar */
 .modal-close {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
+  top: 18px;
+  right: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fff;
-  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
   cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: all 0.25s ease;
+  z-index: 10;
 }
 
 .modal-close:hover {
-  opacity: 1;
+  background: rgba(239, 68, 68, 0.8);
+  border-color: #ef4444;
+  transform: rotate(90deg);
 }
 
 /* 📄 Cuerpo del modal */
 .modal-body {
-  padding: 30px;
-  color: #e0e0e0;
+  padding: 28px 28px 16px 28px;
+  color: #d1d5db;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.legal-modal-header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 14px;
+}
+
+.legal-modal-header h3 {
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.legal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.legal-list li {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.legal-icon {
+  font-size: 1.15rem;
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.legal-text {
+  flex: 1;
+  color: #d1d5db;
+  font-size: 0.95rem;
   line-height: 1.6;
 }
 
-.modal-body h3 {
-  color: #fff;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #0d6efd;
-  padding-bottom: 10px;
+.legal-label {
+  color: #2d6bff;
+  font-weight: 600;
+  margin-right: 4px;
+  display: inline-block;
+  white-space: nowrap;
 }
 
-.modal-body ul {
-  padding-left: 20px;
+/* 🎮 Tarjeta de Atribución IGDB Limpia y Coherente */
+.igdb-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 18px;
+  margin-top: 20px;
 }
 
-.modal-body li {
-  margin-bottom: 12px;
+.igdb-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-.modal-body strong {
-  color: #0d6efd;
+.igdb-card-text {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.igdb-link {
+  color: #00e5ff !important;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.igdb-link:hover {
+  color: #ffffff !important;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+  text-decoration: underline;
+}
+
+.author-card {
+  border: 1px solid rgba(45, 107, 255, 0.25);
+  background: rgba(14, 14, 20, 0.7) !important;
 }
 
 /* 👇 Footer del modal */
 .modal-footer {
-  padding: 15px 30px 30px;
+  padding: 16px 28px 24px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: flex-end;
-  border-top: 1px solid #333;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ud-btn-primary {
+  background: linear-gradient(90deg, #2d6bff, #7c3aed);
+  border: none;
+  color: #fff;
+  padding: 8px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.ud-btn-primary:hover {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Responsivo para móviles */
+@media (max-width: 576px) {
+  .modal-body {
+    padding: 20px 20px 12px 20px;
+  }
+  .modal-footer {
+    padding: 14px 20px 20px;
+    flex-direction: column;
+    width: 100%;
+  }
+  .modal-footer button {
+    width: 100%;
+  }
+  .legal-modal-header h3 {
+    font-size: 1.2rem;
+  }
 }
 
 /* 🖨️ Para impresión (guardar como PDF) */
@@ -174,18 +320,4 @@ a{
   .modal-close, .modal-footer {
     display: none;
   }
-}
-
-.modal-body a[href*="rawg.io"] {
-  color: #0dcaf0 !important;
-  border-bottom: 1px dashed #0dcaf0;
-  transition: all 0.2s;
-}
-
-.modal-body a[href*="rawg.io"]:hover {
-  color: #fff !important;
-  border-bottom-style: solid;
-  background: rgba(13, 202, 240, 0.1);
-  border-radius: 4px;
-  padding: 2px 4px;
 }

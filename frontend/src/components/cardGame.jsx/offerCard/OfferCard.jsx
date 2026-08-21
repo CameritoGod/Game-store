@@ -1,4 +1,5 @@
 import { useCart } from "../../../context/CartContext";
+import "./OfferCard.css";
 
 export default function OfferCard({ id, title, image, oldPrice, discount }) {
   const { addToCart, isInCart } = useCart();
@@ -21,7 +22,15 @@ export default function OfferCard({ id, title, image, oldPrice, discount }) {
   return (
     <div className="offer-card">
       <div className="discount-badge">-{percentage}%</div>
-      <img src={image} alt={title} className="offer-image" />
+      <img
+        src={image || "/nulls/placeholder-game.svg"}
+        alt={title}
+        className="offer-image"
+        onError={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = "/nulls/placeholder-game.svg";
+        }}
+      />
       <div className="offer-content">
         <h4>{title}</h4>
         <div className="prices">
