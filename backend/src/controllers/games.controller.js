@@ -66,7 +66,7 @@ exports.getGameById = async (req, res, next) => {
 // Explorar juegos
 exports.getAllGames = async (req, res, next) => {
   try {
-    const { limit = 20, offset = 0, genre } = req.query;
+    const { limit = 20, offset = 0, genre, year } = req.query;
     const parsedLimit = parseInt(limit, 10);
     const parsedOffset = parseInt(offset, 10);
 
@@ -82,15 +82,24 @@ exports.getAllGames = async (req, res, next) => {
 
     // Validar genero
     let genreId = null;
-    if (genre !== undefined) {
+    if (genre !== undefined && genre !== '' && genre !== 'all') {
       genreId = parseInt(genre, 10);
       if (isNaN(genreId) || genreId <= 0) {
         return res.status(400).json({ error: 'El ID del género es inválido' });
       }
     }
 
-    // Consultar juegos con paginación y filtrado por género
-    const games = await igdbService.getAllGames(parsedLimit, parsedOffset, genreId);
+    // Validar año (flexibilidad: si es incompleto o inválido, ignorar en lugar de 400)
+    let parsedYear = null;
+    if (year !== undefined && year !== '' && String(year).trim().length === 4) {
+      const tempYear = parseInt(year, 10);
+      if (!isNaN(tempYear) && tempYear >= 1970 && tempYear <= 2100) {
+        parsedYear = tempYear;
+      }
+    }
+
+    // Consultar juegos con paginación y filtrado por género y año
+    const games = await igdbService.getAllGames(parsedLimit, parsedOffset, genreId, parsedYear);
 
     res.json({
       success: true,
@@ -100,7 +109,7 @@ exports.getAllGames = async (req, res, next) => {
         offset: parsedOffset,
         nextOffset: parsedOffset + games.length,
       },
-      filters: { genre: genreId },
+      filters: { genre: genreId, year: parsedYear },
       games,
     });
   } catch (error) {

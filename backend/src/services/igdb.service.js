@@ -403,7 +403,7 @@ class IGDBService {
   // ==========================================
   // Explorar todos los juegos
   // ==========================================
-  async getAllGames(limit = 20, offset = 0, genreId = null) {
+  async getAllGames(limit = 20, offset = 0, genreId = null, year = null) {
     const fields = [
       'id',
       'name',
@@ -416,7 +416,7 @@ class IGDBService {
     ].join(',');
 
     // CACHE
-    const cacheKey = `all_games_${limit}_${offset}_${genreId || 'all'}`;
+    const cacheKey = `all_games_${limit}_${offset}_${genreId || 'all'}_${year || 'all'}`;
     const cached = cache.get(cacheKey);
 
     if (cached) {
@@ -424,11 +424,16 @@ class IGDBService {
       return cached;
     }
 
-    // fecha actual
-    const currentTimestamp = Math.floor(Date.now() / 1000);
-
-    // Filtro base
-    let where = `first_release_date < ${currentTimestamp}`;
+    // Filtro de fecha/año
+    let where = `first_release_date != null`;
+    if (year && !isNaN(year) && year > 1970 && year < 2100) {
+      const startTimestamp = Math.floor(new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000);
+      const endTimestamp = Math.floor(new Date(`${year}-12-31T23:59:59Z`).getTime() / 1000);
+      where += ` & first_release_date >= ${startTimestamp} & first_release_date <= ${endTimestamp}`;
+    } else {
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      where += ` & first_release_date < ${currentTimestamp}`;
+    }
 
     // Filtro de genero
     if (genreId !== null) {
