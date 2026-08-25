@@ -34,7 +34,7 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Error de autenticación", error);
-      alert("Error al autenticar o registrar");
+      alert(error.message || "Error al autenticar o registrar");
     }
   };
 

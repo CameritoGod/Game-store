@@ -1,8 +1,7 @@
-// src/api/userApi.js
 import axios from "axios";
 
-// 🎯 URL dinámica para producción / desarrollo
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const BACKEND_URL = API_BASE_URL.replace('/api', '');
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,7 +10,6 @@ export const api = axios.create({
   }
 });
 
-// 🔐 Interceptor para agregar token automáticamente
 api.interceptors.request.use(
   (config) => {
     const savedUser = localStorage.getItem("user");
@@ -30,88 +28,67 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🌐 Interceptor para manejar errores de red amigablemente sin romper la app
-api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
-      console.warn('⚠️ No se pudo conectar al endpoint de usuario/auth. Módulo en desarrollo futuro.');
-    }
-    return Promise.reject(error);
-  }
-);
+export const formatAvatarUrl = (avatar) => {
+  if (!avatar) return '/nulls/null-user-img.png';
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
+  if (avatar.startsWith('/uploads')) return `${BACKEND_URL}${avatar}`;
+  return avatar;
+};
 
-// 🖼️ Función para actualizar avatar (Manejada de forma segura)
 export const updateAvatar = async (file) => {
-  try {
-    const formData = new FormData();
-    formData.append('avatar', file);
-    const { data } = await api.put('/user/avatar', formData);
-    return data;
-  } catch (error) {
-    console.warn("Módulo de usuario no disponible en backend aún:", error.message);
-    return { success: false, message: "Funcionalidad de avatar pendiente de backend" };
-  }
+  const formData = new FormData();
+  formData.append('avatar', file);
+  const { data } = await api.put('/user/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return {
+    ...data,
+    avatar_url: formatAvatarUrl(data.avatar_url)
+  };
 };
 
 export const updateProfile = async (userId, profileData) => {
-  try {
-    const { data } = await api.put(`/user/${userId}`, profileData);
-    return data;
-  } catch (error) {
-    console.warn("Módulo de usuario no disponible en backend aún:", error.message);
-    return { success: false, message: "Funcionalidad de perfil pendiente de backend" };
-  }
+  const { data } = await api.put(`/user/profile`, profileData);
+  return {
+    ...data,
+    user: data.user ? { ...data.user, avatar: formatAvatarUrl(data.user.avatar) } : null
+  };
 };
 
-export const addFavorite = async (favoriteData) => {
-  try {
-    const { data } = await api.post('/user/favorites', favoriteData);
-    return data;
-  } catch (error) {
-    console.warn("Módulo de favoritos no disponible en backend aún:", error.message);
-    return { success: true };
-  }
+export const addFavorite = async (gameData) => {
+  const { data } = await api.post('/user/favorites', gameData);
+  return data;
 };
 
 export const getFavorites = async () => {
-  try {
-    const { data } = await api.get('/user/favorites');
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.warn("Módulo de favoritos no disponible en backend aún:", error.message);
-    return [];
-  }
+  const { data } = await api.get('/user/favorites');
+  return Array.isArray(data) ? data : [];
 };
 
 export const deleteFavorite = async (gameId) => {
-  try {
-    const { data } = await api.delete(`/user/favorites/${gameId}`);
-    return data;
-  } catch (error) {
-    console.warn("Módulo de favoritos no disponible en backend aún:", error.message);
-    return { success: true };
-  }
+  const { data } = await api.delete(`/user/favorites/${gameId}`);
+  return data;
+};
+
+export const checkoutCart = async (items) => {
+  const formattedItems = Array.isArray(items) ? items : (items?.items || []);
+  const { data } = await api.post('/user/purchases', { items: formattedItems });
+  return data;
 };
 
 export const addPurchases = async (purchaseData) => {
-  try {
-    const { data } = await api.post('/user/purchases', purchaseData);
-    return data;
-  } catch (error) {
-    console.warn("Módulo de compras no disponible en backend aún:", error.message);
-    return { success: true };
-  }
+  const items = Array.isArray(purchaseData) ? purchaseData : (purchaseData?.items || []);
+  return await checkoutCart(items);
 };
 
 export const getPurchases = async () => {
-  try {
-    const { data } = await api.get('/user/purchases');
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.warn("Módulo de compras no disponible en backend aún:", error.message);
-    return [];
-  }
+  const { data } = await api.get('/user/purchases');
+  return Array.isArray(data) ? data : [];
+};
+
+export const getLibrary = async () => {
+  const { data } = await api.get('/user/library');
+  return Array.isArray(data) ? data : [];
 };
 
 export default api;
