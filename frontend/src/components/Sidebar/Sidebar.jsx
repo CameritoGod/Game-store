@@ -6,7 +6,7 @@ import { useAuth } from "../../auth/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-import { getPurchases } from "../../api/userApi";
+import { getLibrary } from "../../api/userApi";
 import { getGenres } from "../../api/api";
 
 export default function Sidebar({ open, onClose }) {
@@ -18,11 +18,16 @@ export default function Sidebar({ open, onClose }) {
 
   useEffect(() => {
     if (!user) return;
-    getPurchases().then(setLibrary);
+    getLibrary()
+      .then(data => setLibrary(Array.isArray(data) ? data : []))
+      .catch(err => {
+        console.error("Error cargando biblioteca en sidebar:", err);
+        setLibrary([]);
+      });
   }, [user]);
 
   useEffect(() => {
-    getGenres().then(setGenres);
+    getGenres().then(setGenres).catch(console.error);
   }, []);
 
   const filterNavigate = (genreId) => {
@@ -77,7 +82,7 @@ export default function Sidebar({ open, onClose }) {
             <a href="#trending">
               <li onClick={() => navigate("/")}>
                 <i className="bi bi-fire"></i> Tendencias / Home
-            </li>
+              </li>
             </a>
             <a href="#recomemend">
               <li onClick={() => navigate("/")}>
@@ -126,12 +131,12 @@ export default function Sidebar({ open, onClose }) {
           </ul>
         </div>
 
-      {/* Biblioteca */}
+        {/* Biblioteca */}
         <div className="sidebar-section">
           <h6>Tu biblioteca</h6>
           <ul className="library-list">
             {library.length === 0 ? (
-              <li>No tienes juegos en tu biblioteca</li>
+              <li className="text-muted">No tienes juegos en tu biblioteca</li>
             ) : (
               library.map((game) => (
                 <li 
@@ -141,7 +146,7 @@ export default function Sidebar({ open, onClose }) {
                     onClose();
                   }}
                 >
-                  <i className="bi bi-play-circle"></i> {game.nombre}
+                  <i className="bi bi-play-circle me-2 text-info"></i> {game.nombre}
                 </li>
               ))
             )}

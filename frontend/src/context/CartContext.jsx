@@ -53,14 +53,20 @@ export function CartProvider({ children }) {
       return;
     }
 
+    const rawImage = game.image || game.cover || game.imagen_url || game.coverUrl || game.image_url;
+    const imageUrl = (rawImage && typeof rawImage === 'string' && rawImage.trim() !== '') 
+      ? rawImage 
+      : '/nulls/placeholder-game.svg';
+
     const formattedGame = {
       id: gameId,
       id_juego: gameId,
-      title: game.name || game.nombre || game.title,
-      nombre: game.name || game.nombre || game.title,
-      cover: game.cover || game.imagen_url || game.coverUrl,
-      imagen_url: game.cover || game.imagen_url || game.coverUrl,
-      price: game.precio_actual || game.price || 19.99
+      title: game.name || game.nombre || game.title || `Juego #${gameId}`,
+      nombre: game.name || game.nombre || game.title || `Juego #${gameId}`,
+      image: imageUrl,
+      cover: imageUrl,
+      imagen_url: imageUrl,
+      price: Number(game.precio_actual || game.price || 19.99)
     };
 
     setCartItems(prev => [...prev, formattedGame]);

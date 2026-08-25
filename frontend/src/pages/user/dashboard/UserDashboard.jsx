@@ -3,37 +3,44 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/useAuth";
 import Navbar from "../../../components/navbar/Navbar";
 import Sidebar from "../../../components/Sidebar/Sidebar";
+import { getAvatarUrl, generateSVGPlaceholder } from "../../../utils/avatarUtils";
 import "./UserDashboard.css";
 
 import { updateProfile, updateAvatar, getFavorites, deleteFavorite, getLibrary } from "../../../api/userApi";
 
+// Componente principal para el panel de control del usuario.
 export default function UserDashboard() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
+  // Estados locales para favoritos, biblioteca, edicion de datos y carga de avatar
   const [favorites, setFavorites] = useState([]);
   const [library, setLibrary] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
-  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || '/uploads/avatars/default-avatar.png');
+  const [avatarPreview, setAvatarPreview] = useState(getAvatarUrl(user));
 
+  // Estado del formulario con la informacion personal del usuario
   const [formData, setFormData] = useState({
     nickname: user?.nickname || "",
     name: user?.name || user?.nombre || "",
     email: user?.email || "",
-    password: "********"
+    password: "[PASSWORD]"
   });
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Carga la lista de juegos favoritos y actualiza la vista previa del avatar al detectar cambios en el usuario
   useEffect(() => {
     if (!user) return;
     getFavorites().then(setFavorites).catch(console.error);
-    setAvatarPreview(user.avatar || '/uploads/avatars/default-avatar.png');
+    setAvatarPreview(getAvatarUrl(user));
   }, [user]);
 
+  // Carga los juegos adquiridos en la biblioteca del usuario
   useEffect(() => {
     if (!user) return;
     getLibrary().then(setLibrary).catch(console.error);
@@ -41,16 +48,18 @@ export default function UserDashboard() {
 
   if (!user) return null;
 
+  // Activa el selector de archivos oculto al hacer clic en el avatar o boton de subir
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
 
+  // Valida el tipo y tamaño de la imagen seleccionada, genera la vista previa y ejecuta la subida
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     if (!file.type.match('image.*')) {
-      alert('Solo se permiten imágenes');
+      alert('Solo se permiten archivos de imagen (JPG, PNG, WEBP, GIF)');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -58,18 +67,25 @@ export default function UserDashboard() {
       return;
     }
 
-    setAvatarPreview(URL.createObjectURL(file));
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarPreview(objectUrl);
 
+    // Envia la imagen seleccionada al servidor y actualiza los datos del usuario en la sesion
     const upload = async () => {
+      setUploadingAvatar(true);
       try {
         const response = await updateAvatar(file);
-        const updatedUser = { ...user, avatar: response.avatar_url };
+        const newAvatarUrl = response.avatar_url;
+        const updatedUser = { ...user, avatar: newAvatarUrl, avatar_url: newAvatarUrl };
         login(updatedUser);
-        alert('✅ Avatar actualizado con éxito');
+        setAvatarPreview(newAvatarUrl);
+        alert('Foto de perfil actualizada con éxito');
       } catch (error) {
         console.error('Error al subir avatar:', error);
-        alert(`❌ Error: ${error.message}`);
-        setAvatarPreview(user?.avatar || '/uploads/avatars/default-avatar.png');
+        alert(`Error al subir avatar: ${error.message}`);
+        setAvatarPreview(getAvatarUrl(user));
+      } finally {
+        setUploadingAvatar(false);
       }
     };
     
@@ -77,6 +93,7 @@ export default function UserDashboard() {
     e.target.value = '';
   };
 
+  // Alterna entre el modo de edicion y lectura. Si se esta editando, guarda los cambios en el servidor
   const handleEditToggle = async () => {
     if (isEditing) {
       try {
@@ -89,15 +106,16 @@ export default function UserDashboard() {
         if (res.user) {
           login({ ...user, ...res.user });
         }
-        alert("✅ Perfil actualizado con éxito");
+        alert("Perfil actualizado con éxito");
       } catch (error) {
-        alert("❌ Error al actualizar: " + error.message);
+        alert("Error al actualizar: " + error.message);
         return;
       }
     }
     setIsEditing(!isEditing);
   };
 
+  // Elimina un juego de los favoritos del usuario mediante la API y actualiza la lista local
   const handleDeleteFavorite = async (id_juego) => {
     try {
       await deleteFavorite(id_juego);
@@ -119,23 +137,40 @@ export default function UserDashboard() {
           <div className="col-xl-3 col-lg-4 col-md-12">
             <div className="ud-card ud-profile">
               
+              {/* Avatar con Trigger de Clic */}
               <div 
                 className="ud-avatar-container position-relative d-inline-block"
                 onClick={handleAvatarClick}
+                title="Haz clic para cambiar tu foto de perfil"
                 style={{ cursor: 'pointer' }}
               >
                 <img 
                   src={avatarPreview} 
                   className="ud-avatar" 
                   alt="avatar" 
-                  style={{ width: 120, height: 120, borderRadius: '50%', objectFit: 'cover' }}
+                  style={{ width: 130, height: 130, borderRadius: '50%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    // En caso de error al cargar imagen, genera un placeholder SVG con la inicial
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = generateSVGPlaceholder(user.nickname || user.nombre || 'U');
+                  }}
                 />
-                <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-                     style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '50%', opacity: 0, transition: 'opacity 0.2s' }}
-                     onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                     onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+                
+                {/* Overlay flotante */}
+                <div 
+                  className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                  style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '50%', opacity: uploadingAvatar ? 1 : 0, transition: 'opacity 0.25s ease' }}
+                  onMouseEnter={(e) => { if (!uploadingAvatar) e.currentTarget.style.opacity = '1'; }}
+                  onMouseLeave={(e) => { if (!uploadingAvatar) e.currentTarget.style.opacity = '0'; }}
                 >
-                  <i className="bi bi-camera-fill text-white fs-4"></i>
+                  {uploadingAvatar ? (
+                    <div className="spinner-border text-light spinner-border-sm" role="status"></div>
+                  ) : (
+                    <>
+                      <i className="bi bi-camera-fill text-white fs-4"></i>
+                      <small className="text-white fw-bold" style={{ fontSize: '0.75rem' }}>Cambiar foto</small>
+                    </>
+                  )}
                 </div>
               </div>
               
@@ -147,8 +182,17 @@ export default function UserDashboard() {
                 hidden
               />
 
+              <div className="mt-2">
+                <button 
+                  className="btn btn-sm btn-outline-primary rounded-pill px-3 mt-1"
+                  onClick={handleAvatarClick}
+                >
+                  <i className="bi bi-upload me-1"></i> Subir Avatar
+                </button>
+              </div>
+
               <h4 className="mt-3 text-white">{user.nickname}</h4>
-              <p className="ud-email text-muted">{user.email}</p>
+              <p className="ud-email text-white">{user.email}</p>
 
               <div className="ud-form mt-4">
                 <div className="form-floating mb-3">
@@ -193,14 +237,21 @@ export default function UserDashboard() {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
+                    style={{ paddingRight: '45px' }}
                   />
                   <label>Contraseña</label>
                   <button
                     type="button"
-                    className="ud-eye-btn"
-                    onClick={() => setShowPassword(!showPassword)}
+                    className="btn border-0 text-secondary position-absolute top-50 end-0 translate-middle-y me-2"
+                    onClick={(e) => {
+                      // Alterna el estado de visibilidad de la contraseña
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowPassword(prev => !prev);
+                    }}
+                    style={{ zIndex: 10, cursor: 'pointer', background: 'transparent' }}
                   >
-                    <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`} />
+                    <i className={`bi ${showPassword ? "bi-eye-slash-fill text-warning" : "bi-eye-fill text-light"} fs-5`} />
                   </button>
                 </div>
 
@@ -224,7 +275,7 @@ export default function UserDashboard() {
 
               <div className="ud-games-grid">
                 { favorites.length === 0 ? (
-                  <p className="text-center text-muted py-4">No tienes juegos favoritos agregados.</p>
+                  <p className="text-center text-white py-4">No tienes juegos favoritos agregados.</p>
                 ) : (
                   favorites.map((game) => (
                     <div key={game.id_juego} className="ud-game-card position-relative">
@@ -236,7 +287,16 @@ export default function UserDashboard() {
                         <i className="bi bi-trash"></i>
                       </button>
 
-                      <img src={game.imagen_url || '/nulls/null-user-img.png'} alt={game.nombre} className="img-fluid" />
+                      <img 
+                        src={game.imagen_url || '/nulls/placeholder-game.svg'} 
+                        alt={game.nombre} 
+                        className="img-fluid"
+                        onError={(e) => {
+                          // Si falla la carga de la imagen del juego, usa un placeholder por defecto
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/nulls/placeholder-game.svg";
+                        }}
+                      />
 
                       <div className="ud-game-info p-2">
                         <h6 className="text-truncate text-white">{game.nombre}</h6>
@@ -258,11 +318,19 @@ export default function UserDashboard() {
 
               <div className="ud-games-grid">
                 { library.length === 0 ? (
-                  <p className="text-center text-muted py-4">No has adquirido juegos aún. ¡Explora el catálogo!</p>
+                  <p className="text-center text-white py-4">No has adquirido juegos aún. ¡Explora el catálogo!</p>
                 ) : (
                   library.map((game) => (
                   <div key={game.id_juego} className="ud-game-card">
-                    <img src={game.imagen_url || '/nulls/null-user-img.png'} alt={game.nombre} />
+                    <img 
+                      src={game.imagen_url || '/nulls/placeholder-game.svg'} 
+                      alt={game.nombre} 
+                      onError={(e) => {
+                        // Si falla la carga de la imagen del juego, usa un placeholder por defecto
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/nulls/placeholder-game.svg";
+                      }}
+                    />
                     <div className="ud-game-info p-2">
                       <h6 className="text-white text-truncate">{game.nombre}</h6>
                       <small className="text-muted d-block mb-2">Adquirido: {new Date(game.adquirido_en).toLocaleDateString()}</small>

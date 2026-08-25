@@ -17,21 +17,31 @@ export default function CartDropdown() {
         ) : (
           <>
             <ul className="cart-list">
-              {cartItems.map(item => (
-                <li key={item.id} className="cart-item">
-                  <img src={item.image} alt={item.title} />
-                  <div>
-                    <p>{item.title}</p>
-                    <span>${item.price}</span>
-                  </div>
-                  <button
-                    className="remove-btn"
-                    onClick={() => removeFromCart(item.id)}
-                  >
-                    ✕
-                  </button>
-                </li>
-              ))}
+              {cartItems.map(item => {
+                const imgSrc = item.image || item.cover || item.imagen_url || "/nulls/placeholder-game.svg";
+                return (
+                  <li key={item.id} className="cart-item">
+                    <img
+                      src={imgSrc}
+                      alt={item.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/nulls/placeholder-game.svg";
+                      }}
+                    />
+                    <div>
+                      <p className="text-truncate" style={{ maxWidth: "120px" }}>{item.title}</p>
+                      <span>${Number(item.price).toFixed(2)}</span>
+                    </div>
+                    <button
+                      className="remove-btn"
+                      onClick={() => removeFromCart(item.id)}
+                    >
+                      ✕
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
 
             <div className="cart-total">
