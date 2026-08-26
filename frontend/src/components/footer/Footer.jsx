@@ -10,57 +10,110 @@ export default function Footer() {
     navigate(path);
   };
 
-  //  Contenido de Términos y Condiciones
+  // 📋 Contenido de Términos y Condiciones
   const termsContent = `
-    <h3>📋 Términos y Condiciones</h3>
-    <ul>
-      <li>✅ El sitio web es de <strong>uso totalmente gratuito</strong>.</li>
-      <li>✅ Este sitio fue desarrollado como <strong>proyecto de práctica y portafolio</strong>.</li>
-      <li>✅ El sitio web me pertenece y está protegido por derechos de autor.</li>
-      <li>⚠️ El sitio <strong>no cuenta con seguridad robusta</strong>. No me hago responsable si se ingresan datos sensibles.</li>
-      <li>✅ El sitio <strong>no requiere datos sensibles</strong>, solo un correo electrónico válido para registro.</li>
-      <li>✅ Los pagos con tarjeta de crédito son <strong>simulados</strong>. No se solicitan ni almacenan datos reales.</li>
-      <li>✅ Este proyecto fue desarrollado por <strong>Breixon</strong> como prueba técnica para su portafolio profesional.</li>
-
-      <!-- 🎮 NUEVO: Atribución RAWG API -->
-      <li class="mt-3 pt-3 border-top border-secondary">
-        <i class="bi bi-database text-info"></i> 
-        <strong>Fuente de datos de juegos:</strong> 
-        La información de videojuegos (títulos, imágenes, descripciones, géneros y calificaciones) es proporcionada por la API de 
-        <a href="https://rawg.io" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
-          <strong>RAWG.io</strong>
-        </a>. 
-        Este sitio no está afiliado ni endosado por RAWG. Todos los derechos de los datos pertenecen a sus respectivos propietarios.
+    <div class="legal-modal-header mb-3">
+      <i class="bi bi-file-earmark-text-fill text-primary fs-3 me-2"></i>
+      <h3>Términos y Condiciones</h3>
+    </div>
+    <ul class="legal-list">
+      <li>
+        <i class="bi bi-check-circle-fill text-success legal-icon"></i>
+        <div class="legal-text">El sitio web es de <strong>uso totalmente gratuito</strong>.</div>
+      </li>
+      <li>
+        <i class="bi bi-check-circle-fill text-success legal-icon"></i>
+        <div class="legal-text">Este sitio fue desarrollado como <strong>proyecto de práctica y portafolio profesional</strong>.</div>
+      </li>
+      <li>
+        <i class="bi bi-check-circle-fill text-success legal-icon"></i>
+        <div class="legal-text">El sitio web pertenece al desarrollador y está protegido por <strong>derechos de autor</strong>.</div>
+      </li>
+      <li>
+        <i class="bi bi-exclamation-triangle-fill text-warning legal-icon"></i>
+        <div class="legal-text">El sitio <strong>no cuenta con seguridad de nivel bancario</strong>. No ingresar datos sensibles reales.</div>
+      </li>
+      <li>
+        <i class="bi bi-check-circle-fill text-success legal-icon"></i>
+        <div class="legal-text">El registro solo requiere un correo electrónico válido para simular la sesión.</div>
+      </li>
+      <li>
+        <i class="bi bi-credit-card-fill text-info legal-icon"></i>
+        <div class="legal-text">Los pagos con tarjeta son <strong>100% simulados</strong>. No se solicitan ni almacenan datos bancarios reales.</div>
+      </li>
+      <li>
+        <i class="bi bi-code-slash text-primary legal-icon"></i>
+        <div class="legal-text">Desarrollado por <strong>Breixon Camero</strong> para su portafolio Full Stack.</div>
       </li>
     </ul>
-    <p class="mt-3 text-white"><small>Última actualización: ${new Date().toLocaleDateString('es-ES')}</small></p>
+
+    <!-- 🎮 ATRIBUCIÓN IGDB API REDISEÑADA -->
+    <div class="igdb-card">
+      <div class="igdb-card-header">
+        <i class="bi bi-database-fill text-info fs-5"></i>
+        <strong class="text-white">Fuente de datos de juegos (IGDB):</strong>
+      </div>
+      <p class="igdb-card-text">
+        La información de videojuegos (títulos, portadas, descripciones, géneros y valoraciones) es provista en tiempo real a través de la API oficial de
+        <a href="https://www.igdb.com" target="_blank" rel="noopener noreferrer" class="igdb-link fw-bold ms-1">
+          IGDB.com (Twitch / Amazon)
+        </a>. 
+        Este sitio no está afiliado ni patrocinado oficialmente por IGDB. Todos los derechos e imágenes pertenecen a sus respectivos creadores.
+      </p>
+    </div>
+
+    <p class="mt-3 text-secondary text-end"><small>Última actualización: ${new Date().toLocaleDateString('es-ES')}</small></p>
   `;
 
   // 🔒 Contenido de Política de Privacidad
   const privacyContent = `
-    <h3>🔒 Política de Privacidad</h3>
-    <ul>
-      <li><i class="bi bi-lock-fill text-warning"></i> <strong>Correo electrónico:</strong> Solo utilizamos tu email para crear tu cuenta y comunicarnos contigo. No lo compartimos con terceros.</li>
-      <li><i class="bi bi-shield-lock-fill text-warning"></i> <strong>Datos sensibles:</strong> Este sitio NO solicita ni almacena información sensible como tarjetas de crédito, documentos de identidad o direcciones físicas.</li>
-      <li><i class="bi bi-controller text-white"></i> <strong>Datos de juego:</strong> Guardamos tu historial de compras simuladas y preferencias para mejorar tu experiencia.</li>
-      <li><i class="bi bi-globe text-white"></i> <strong>Cookies:</strong> Usamos cookies técnicas para mantener tu sesión activa. No usamos cookies de rastreo publicitario.</li>
-      <li><i class="bi bi-trash text-danger"></i> <strong>Eliminación de datos:</strong> Puedes solicitar la eliminación de tu cuenta y datos en cualquier momento contactando al desarrollador.</li>
-      <li><i class="bi bi-exclamation-triangle text-warning"></i> <strong>Advertencia de seguridad:</strong> Al ser un proyecto de portafolio, no garantiza niveles de seguridad de producción. No ingreses información confidencial.</li>
+    <div class="legal-modal-header mb-3">
+      <i class="bi bi-shield-check text-warning fs-3 me-2"></i>
+      <h3>Política de Privacidad</h3>
+    </div>
+    <ul class="legal-list">
+      <li>
+        <i class="bi bi-lock-fill text-warning legal-icon"></i>
+        <div class="legal-text"><strong class="legal-label">Correo electrónico:</strong> Utilizado únicamente para gestionar tu perfil simulado. No comerciamos ni compartimos tu información.</div>
+      </li>
+      <li>
+        <i class="bi bi-shield-lock-fill text-warning legal-icon"></i>
+        <div class="legal-text"><strong class="legal-label">Datos sensibles:</strong> Este sitio NO almacena ni procesa tarjetas reales ni documentos oficiales.</div>
+      </li>
+      <li>
+        <i class="bi bi-controller text-primary legal-icon"></i>
+        <div class="legal-text"><strong class="legal-label">Información de juegos:</strong> Guardamos tu lista de compras simuladas y favoritos en almacenamiento local/sesión.</div>
+      </li>
+      <li>
+        <i class="bi bi-globe text-info legal-icon"></i>
+        <div class="legal-text"><strong class="legal-label">Cookies:</strong> Empleamos únicamente almacenamiento técnico básico para mantener tu experiencia de navegación.</div>
+      </li>
+      <li>
+        <i class="bi bi-trash-fill text-danger legal-icon"></i>
+        <div class="legal-text"><strong class="legal-label">Eliminación de datos:</strong> Puedes cerrar sesión o limpiar los datos almacenados en cualquier momento.</div>
+      </li>
     </ul>
-    <p class="mt-3 text-white"><small>Última actualización: 28/02/2025</small></p>
+    <p class="mt-3 text-secondary text-end"><small>Última actualización: 28/02/2025</small></p>
   `;
 
   // © Derechos de autor
   const copyrightContent = `
-    <h3>© Derechos de Autor</h3>
-    <p>Este sitio web y todo su contenido (código, diseño, textos y elementos visuales) son propiedad intelectual de:</p>
-    <p class="text-center fw-bold mt-3"><i class="bi bi-person-circle text-white"></i> <strong>Breixon Camero Dev</strong></p>
-    <p class="text-center">Desarrollador Full Stack</p>
-    <hr/>
-    <p><strong><i class="bi bi-person-rolodex text-white"></i> Contacto:</strong> breixonalejandro29c@gmail.com</p>
-    <p><strong><i class="bi bi-suitcase-lg-fill text-white"></i> Portafolio:</strong> <a href="https://camerodev.com" target="_blank">CameroDev.com</a></p>
-    <p><strong><i class="bi bi-github text-white"></i> GitHub:</strong> <a href="https://github.com/CameritoGod" target="_blank">BreixonCamero</a></p>
-    <p class="mt-3 text-white"><small>Todos los derechos reservados. Prohibida la reproducción total o parcial sin autorización escrita.</small></p>
+    <div class="legal-modal-header mb-3">
+      <i class="bi bi-c-circle-fill text-danger fs-3 me-2"></i>
+      <h3>Derechos de Autor</h3>
+    </div>
+    <p class="mt-2 text-light">Este proyecto y su código fuente (arquitectura, diseño y lógica de componentes) son propiedad intelectual de:</p>
+    <div class="author-card p-3 my-3 text-center rounded-3">
+      <i class="bi bi-person-badge-fill text-primary display-4 mb-2 d-block"></i>
+      <h5 class="text-white mb-0">Breixon Camero</h5>
+      <small class="text-info">Desarrollador Full Stack</small>
+    </div>
+    <div class="contact-links">
+      <p class="mb-2"><i class="bi bi-envelope-fill text-warning me-2"></i> <strong class="legal-label">Contacto:</strong> <a href="mailto:breixoncamero29c@gmail.com" class="text-light">breixoncamero29c@gmail.com</a></p>
+      <p class="mb-2"><i class="bi bi-globe2 text-info me-2"></i> <strong class="legal-label">Portafolio:</strong> <a href="https://breixoncamerodev.vercel.app" target="_blank" rel="noopener noreferrer" class="text-light">Breixon Camero Web</a></p>
+      <p class="mb-0"><i class="bi bi-github text-white me-2"></i> <strong class="legal-label">Github:</strong> <a href="https://github.com/CameritoGod" target="_blank" rel="noopener noreferrer" class="text-light">CameritoGod</a></p>
+    </div>
+    <p class="mt-4 text-secondary text-end"><small>Todos los derechos reservados © ${new Date().getFullYear()}</small></p>
   `;
 
   const openModal = (type) => {
@@ -147,7 +200,7 @@ export default function Footer() {
       {modalContent && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeModal}>
+            <button className="modal-close" onClick={closeModal} aria-label="Cerrar modal">
               <i className="bi bi-x-lg"></i>
             </button>
             <div 

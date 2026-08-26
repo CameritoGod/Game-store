@@ -1,56 +1,692 @@
+/* ==========================================================================
+   REDISEÑO INTEGRAL DEL MODAL DE PAGO (CHECKOUT MODAL)
+   ========================================================================== */
+
+/* Fondo oscuro con desenfoque de cristal (Glassmorphism Overlay) */
 .checkout-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(8, 8, 12, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 2100;
+  padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  animation: fadeInOverlay 0.3s ease forwards;
 }
 
-.checkout-modal {
-  background: #1e1e2e;
-  padding: 25px;
-  border-radius: 15px;
+/* Contenedor principal del Modal */
+.checkout-modal-container {
+  background: linear-gradient(145deg, rgba(26, 26, 36, 0.98), rgba(14, 14, 18, 0.99));
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(124, 58, 237, 0.15);
+  border-radius: 20px;
   width: 100%;
-  max-width: 400px;
-  color: white;
+  max-width: 960px;
+  color: #ffffff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: scaleUpModal 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-height: 90vh;
+  margin: auto;
+  box-sizing: border-box;
 }
 
-.checkout-modal input {
-  width: 100%;
-  margin-bottom: 10px;
-  padding: 10px;
-  background: #151523;
+/* Encabezado del Modal */
+.checkout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: rgba(14, 14, 18, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.checkout-header-title {
+  display: flex;
+  align-items: center;
+}
+
+.checkout-close-btn {
+  background: transparent;
   border: none;
+  color: #8a8a8a;
+  font-size: 1.1rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checkout-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Banner de Advertencia (Entorno de Pruebas) */
+.demo-warning-banner {
+  background: linear-gradient(90deg, rgba(250, 204, 21, 0.12), rgba(245, 158, 11, 0.08));
+  border-bottom: 1px solid rgba(250, 204, 21, 0.25);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.demo-warning-icon {
+  color: #facc15;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.demo-warning-content {
+  font-size: 0.83rem;
+  color: #e2e8f0;
+  flex-grow: 1;
+}
+
+.demo-warning-content strong {
+  color: #facc15;
+  display: block;
+  font-size: 0.85rem;
+}
+
+.demo-warning-content span {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.btn-demo-autofill {
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  color: #fef08a;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  min-height: 32px;
+}
+
+.btn-demo-autofill:hover {
+  background: rgba(250, 204, 21, 0.3);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.3);
+}
+
+/* Grid Principal de 2 Columnas */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.section-subtitle {
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a78bfa;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+}
+
+/* Columna Izquierda: Resumen */
+.checkout-summary-section {
+  padding: 20px 24px;
+  background: rgba(12, 12, 16, 0.4);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.summary-items-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summary-items-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.summary-items-scroll::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.3);
+  border-radius: 4px;
+}
+
+.summary-item-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+
+.summary-item-card img {
+  width: 42px;
+  height: 42px;
   border-radius: 8px;
-  color: white;
+  object-fit: cover;
 }
 
-.checkout-row {
+.summary-item-info {
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.item-title {
+  display: block;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #f1f5f9;
+}
+
+.item-badge {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.item-price {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #38bdf8;
+}
+
+.summary-financials {
+  margin-top: auto;
+  background: rgba(20, 20, 28, 0.6);
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.financial-row {
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 6px;
 }
 
-.checkout-actions {
+.financial-row.total-highlight {
+  margin-bottom: 0;
+  font-size: 0.95rem;
+  align-items: center;
+}
+
+.total-price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #21c55d;
+  text-shadow: 0 0 10px rgba(33, 197, 93, 0.3);
+}
+
+.divider {
+  border-color: rgba(255, 255, 255, 0.08);
+  margin: 8px 0;
+}
+
+/* Columna Derecha: Formulario */
+.checkout-form-section {
+  padding: 20px 24px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Previsualización de Tarjeta Simulada (Glassmorphism 3D effect) */
+.simulated-card-preview {
+  background: linear-gradient(135deg, #3d0066 0%, #7a2cff 50%, #1e1b4b 100%);
+  border-radius: 14px;
+  padding: 14px 18px;
+  box-shadow: 
+    0 10px 25px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: block;
+}
+
+.simulated-card-preview::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
+  transform: rotate(45deg);
+}
+
+.card-preview-top {
   display: flex;
-  gap: 10px;
-  margin-top: 15px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
+.chip-icon {
+  font-size: 1.5rem;
+  color: #facc15;
+}
 
-.checkout-error {
-  color: #ff6b6b;
-  margin-top: 10px;
+.card-type-logo {
+  font-weight: 900;
+  font-style: italic;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+.card-preview-number {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.card-preview-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.card-label {
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.5px;
+}
+
+.card-val {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Campos de Formulario */
+.input-group-custom label {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 3px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: #7c3aed;
+  font-size: 0.95rem;
+}
+
+.input-wrapper input {
+  width: 100%;
+  background: #0e0e10;
+  border: 1px solid #2a2a2e;
+  border-radius: 8px;
+  padding: 10px 12px 10px 36px;
+  color: #ffffff;
   font-size: 0.9rem;
+  outline: none;
+  transition: all 0.25s ease;
+  min-height: 40px;
+  box-sizing: border-box;
 }
 
-.success-text {
-  color: #2ecc71;
-  font-size: 1.4rem;
+.input-wrapper input:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.35);
+  background: #14141a;
 }
 
-.checkout-modal button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+/* Alerta de Error */
+.checkout-error-alert {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+/* Botones de Acción */
+.checkout-actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+.checkout-btn-primary {
+  flex: 2;
+  background: linear-gradient(135deg, #3d0066, #7a2cff);
+  color: #ffffff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkout-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(122, 44, 255, 0.5);
+}
+
+.checkout-btn-secondary {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkout-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Vista de Carga */
+.checkout-loading-view {
+  padding: 50px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-glow {
+  position: relative;
+  display: inline-block;
+}
+
+.spinner-glow::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.4), transparent 70%);
+  z-index: -1;
+  animation: pulseGlow 1.5s infinite alternate;
+}
+
+/* Vista de Éxito */
+.checkout-success-view {
+  padding: 30px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.success-icon-badge {
+  font-size: 3.5rem;
+  color: #21c55d;
+  text-shadow: 0 0 25px rgba(33, 197, 93, 0.5);
+  animation: bounceSuccess 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.success-receipt-card {
+  background: rgba(14, 14, 18, 0.6);
+  border: 1px solid rgba(33, 197, 93, 0.25);
+  border-radius: 12px;
+  padding: 14px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
+.receipt-row.total-row {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  margin-bottom: 0;
+}
+
+.text-purple { color: #a78bfa !important; }
+.text-success-neon { color: #21c55d !important; }
+.fw-mono { font-family: 'Courier New', Courier, monospace; }
+
+/* Animaciones */
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUpModal {
+  from { opacity: 0; transform: scale(0.94) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes pulseGlow {
+  from { opacity: 0.4; transform: scale(0.9); }
+  to { opacity: 0.9; transform: scale(1.1); }
+}
+
+@keyframes bounceSuccess {
+  from { transform: scale(0.3); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ==========================================================================
+   OPTIMIZACIÓN RESPONSIVA (Móviles y Tablets sin remover la tarjeta 3D)
+   ========================================================================== */
+@media (max-width: 840px) {
+  .checkout-overlay {
+    padding: 8px;
+    align-items: center;
+  }
+
+  .checkout-modal-container {
+    max-height: 94vh;
+    border-radius: 16px;
+  }
+
+  .checkout-header {
+    padding: 12px 16px;
+  }
+
+  .checkout-grid {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .checkout-summary-section {
+    padding: 14px 16px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    min-width: 0;
+  }
+
+  .summary-items-scroll {
+    max-height: 110px;
+    margin-bottom: 8px;
+  }
+
+  .summary-item-card {
+    padding: 5px 8px;
+  }
+
+  .summary-item-card img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .summary-financials {
+    padding: 8px 10px;
+  }
+
+  .financial-row {
+    font-size: 0.78rem;
+    margin-bottom: 3px;
+  }
+
+  .total-price {
+    font-size: 1.1rem;
+  }
+
+  .checkout-form-section {
+    padding: 14px 16px;
+  }
+
+  /* Conservar la Tarjeta Simulada 3D visible y escalada proporcionalmente */
+  .simulated-card-preview {
+    display: block;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+  }
+
+  .card-preview-top {
+    margin-bottom: 6px;
+  }
+
+  .chip-icon {
+    font-size: 1.2rem;
+  }
+
+  .card-type-logo {
+    font-size: 0.95rem;
+  }
+
+  .card-preview-number {
+    font-size: 0.88rem;
+    letter-spacing: 1.2px;
+    margin-bottom: 6px;
+  }
+
+  .card-label {
+    font-size: 0.58rem;
+  }
+
+  .card-val {
+    font-size: 0.75rem;
+  }
+
+  .demo-warning-banner {
+    padding: 8px 14px;
+    gap: 8px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .demo-warning-icon {
+    font-size: 1.1rem;
+  }
+
+  .demo-warning-content {
+    font-size: 0.75rem;
+  }
+
+  .demo-warning-content strong {
+    font-size: 0.78rem;
+  }
+
+  .btn-demo-autofill {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+  }
+
+  .checkout-actions-row {
+    margin-top: 10px;
+  }
+
+  .checkout-btn-primary,
+  .checkout-btn-secondary {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .checkout-overlay {
+    padding: 4px;
+  }
+
+  .checkout-modal-container {
+    max-height: 98vh;
+    border-radius: 14px;
+  }
+
+  .demo-warning-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .btn-demo-autofill {
+    align-self: flex-start;
+  }
+
+  /* Mantiene la tarjeta 3D visible de forma súper compacta en móviles */
+  .simulated-card-preview {
+    display: block;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+  }
+
+  .card-preview-number {
+    font-size: 0.82rem;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
 }

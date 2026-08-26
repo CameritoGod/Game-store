@@ -1,8 +1,7 @@
-// src/api/userApi.js
 import axios from "axios";
 
-// 🎯 URL dinámica para producción
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const BACKEND_URL = API_BASE_URL.replace('/api', '');
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,7 +10,6 @@ export const api = axios.create({
   }
 });
 
-// 🔐 Interceptor para agregar token automáticamente
 api.interceptors.request.use(
   (config) => {
     const savedUser = localStorage.getItem("user");
@@ -30,40 +28,41 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🌐 Interceptor para manejar errores de red amigablemente
-api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
-      console.error('❌ No se pudo conectar al servidor. Verifica tu conexión o que el backend esté activo.');
-    }
-    return Promise.reject(error);
-  }
-);
+export const formatAvatarUrl = (avatar) => {
+  if (!avatar) return '/nulls/null-user-img.png';
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
+  if (avatar.startsWith('/uploads')) return `${BACKEND_URL}${avatar}`;
+  return avatar;
+};
 
-// 🖼️ Función para actualizar avatar
 export const updateAvatar = async (file) => {
   const formData = new FormData();
   formData.append('avatar', file);
-
-  // ⚠️ NO establecer Content-Type manualmente: axios lo hace con el boundary correcto
-  const { data } = await api.put('/user/avatar', formData);
-  return data;
+  const { data } = await api.put('/user/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return {
+    ...data,
+    avatar_url: formatAvatarUrl(data.avatar_url)
+  };
 };
 
 export const updateProfile = async (userId, profileData) => {
-  const { data } = await api.put(`/user/${userId}`, profileData);
-  return data;
+  const { data } = await api.put(`/user/profile`, profileData);
+  return {
+    ...data,
+    user: data.user ? { ...data.user, avatar: formatAvatarUrl(data.user.avatar) } : null
+  };
 };
 
-export const addFavorite = async (favoriteData) => {
-  const { data } = await api.post('/user/favorites', favoriteData);
+export const addFavorite = async (gameData) => {
+  const { data } = await api.post('/user/favorites', gameData);
   return data;
 };
 
 export const getFavorites = async () => {
   const { data } = await api.get('/user/favorites');
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 export const deleteFavorite = async (gameId) => {
@@ -71,14 +70,25 @@ export const deleteFavorite = async (gameId) => {
   return data;
 };
 
-export const addPurchases = async (purchaseData) => {
-  const { data } = await api.post('/user/purchases', purchaseData);
+export const checkoutCart = async (items) => {
+  const formattedItems = Array.isArray(items) ? items : (items?.items || []);
+  const { data } = await api.post('/user/purchases', { items: formattedItems });
   return data;
+};
+
+export const addPurchases = async (purchaseData) => {
+  const items = Array.isArray(purchaseData) ? purchaseData : (purchaseData?.items || []);
+  return await checkoutCart(items);
 };
 
 export const getPurchases = async () => {
   const { data } = await api.get('/user/purchases');
-  return data;
+  return Array.isArray(data) ? data : [];
+};
+
+export const getLibrary = async () => {
+  const { data } = await api.get('/user/library');
+  return Array.isArray(data) ? data : [];
 };
 
 export default api;

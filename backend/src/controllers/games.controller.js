@@ -1,4 +1,54 @@
 const igdbService = require('../services/igdb.service');
+const priceService = require('../services/price.service');
+const LibraryDAO = require('../dao/mysql/LibraryDAO');
+const DiscountDAO = require('../dao/mysql/DiscountDAO');
+
+const libraryDAO = new LibraryDAO();
+const discountDAO = new DiscountDAO();
+
+/**
+ * Función auxiliar para enriquecer juegos con:
+ * 1. Precio determinista y ofertas vigentes calculadas (PriceService + DiscountDAO).
+ * 2. Estado de propiedad en biblioteca (isOwned / inLibrary) si el usuario está autenticado.
+ */
+async function enrichGames(games, userId = null) {
+  if (!games) return games;
+
+  const isArray = Array.isArray(games);
+  const gamesList = isArray ? games : [games];
+
+  // 1. Obtener ofertas activas hoy
+  let activeDiscountsMap = new Map();
+  try {
+    activeDiscountsMap = await discountDAO.getAllActiveDiscountsMap();
+  } catch (e) {
+    console.error('Error al obtener ofertas activas en enrichGames:', e.message);
+  }
+
+  // 2. Obtener Set de IDs comprados si existe usuario autenticado
+  let ownedIdsSet = new Set();
+  if (userId) {
+    try {
+      const ownedIds = await libraryDAO.getUserLibraryGameIds(userId);
+      ownedIdsSet = new Set(ownedIds);
+    } catch (e) {
+      console.error('Error al obtener la biblioteca del usuario en enrichGames:', e.message);
+    }
+  }
+
+  // 3. Enriquecer cada juego con precio determinista, promociones y propiedad isOwned/inLibrary
+  const enriched = gamesList.map((game) => {
+    const gameWithPriceAndDiscount = priceService.attachPrice(game, activeDiscountsMap);
+    const owned = ownedIdsSet.has(Number(gameWithPriceAndDiscount.id || gameWithPriceAndDiscount.id_juego));
+    return {
+      ...gameWithPriceAndDiscount,
+      isOwned: owned,
+      inLibrary: owned
+    };
+  });
+
+  return isArray ? enriched : enriched[0];
+}
 
 // Buscar juegos
 exports.searchGames = async (req, res, next) => {
@@ -12,7 +62,8 @@ exports.searchGames = async (req, res, next) => {
     }
 
     const games = await igdbService.searchGames(q.trim(), parseInt(limit, 10));
-    res.json({ success: true, count: games.length, games });
+    const enrichedGames = await enrichGames(games, req.user?.id_usuario);
+    res.json({ success: true, count: enrichedGames.length, games: enrichedGames });
   } catch (error) {
     next(error);
   }
@@ -23,8 +74,9 @@ exports.getTopRatedGames = async (req, res, next) => {
   try {
     const { limit = 5 } = req.query;
     const games = await igdbService.getTopRatedGames(parseInt(limit, 10));
+    const enrichedGames = await enrichGames(games, req.user?.id_usuario);
 
-    res.json({ success: true, count: games.length, games });
+    res.json({ success: true, count: enrichedGames.length, games: enrichedGames });
   } catch (error) {
     next(error);
   }
@@ -35,8 +87,9 @@ exports.getTrendingGames = async (req, res, next) => {
   try {
     const { limit = 5 } = req.query;
     const games = await igdbService.getTrendingGames(parseInt(limit, 10));
+    const enrichedGames = await enrichGames(games, req.user?.id_usuario);
 
-    res.json({ success: true, count: games.length, games });
+    res.json({ success: true, count: enrichedGames.length, games: enrichedGames });
   } catch (error) {
     next(error);
   }
@@ -57,7 +110,9 @@ exports.getGameById = async (req, res, next) => {
       return res.status(404).json({ error: 'Juego no encontrado' });
     }
 
-    res.json({ success: true, game });
+    const enrichedGame = await enrichGames(game, req.user?.id_usuario);
+
+    res.json({ success: true, game: enrichedGame });
   } catch (error) {
     next(error);
   }
@@ -66,7 +121,7 @@ exports.getGameById = async (req, res, next) => {
 // Explorar juegos
 exports.getAllGames = async (req, res, next) => {
   try {
-    const { limit = 20, offset = 0, genre } = req.query;
+    const { limit = 20, offset = 0, genre, year } = req.query;
     const parsedLimit = parseInt(limit, 10);
     const parsedOffset = parseInt(offset, 10);
 
@@ -82,26 +137,36 @@ exports.getAllGames = async (req, res, next) => {
 
     // Validar genero
     let genreId = null;
-    if (genre !== undefined) {
+    if (genre !== undefined && genre !== '' && genre !== 'all') {
       genreId = parseInt(genre, 10);
       if (isNaN(genreId) || genreId <= 0) {
         return res.status(400).json({ error: 'El ID del género es inválido' });
       }
     }
 
-    // Consultar juegos con paginación y filtrado por género
-    const games = await igdbService.getAllGames(parsedLimit, parsedOffset, genreId);
+    // Validar año
+    let parsedYear = null;
+    if (year !== undefined && year !== '' && String(year).trim().length === 4) {
+      const tempYear = parseInt(year, 10);
+      if (!isNaN(tempYear) && tempYear >= 1970 && tempYear <= 2100) {
+        parsedYear = tempYear;
+      }
+    }
+
+    // Consultar juegos con paginación y filtrado por género y año
+    const games = await igdbService.getAllGames(parsedLimit, parsedOffset, genreId, parsedYear);
+    const enrichedGames = await enrichGames(games, req.user?.id_usuario);
 
     res.json({
       success: true,
-      count: games.length,
+      count: enrichedGames.length,
       pagination: {
         limit: parsedLimit,
         offset: parsedOffset,
-        nextOffset: parsedOffset + games.length,
+        nextOffset: parsedOffset + enrichedGames.length,
       },
-      filters: { genre: genreId },
-      games,
+      filters: { genre: genreId, year: parsedYear },
+      games: enrichedGames,
     });
   } catch (error) {
     next(error);
@@ -113,6 +178,38 @@ exports.getGenres = async (req, res, next) => {
   try {
     const genres = await igdbService.getGenres();
     res.json({ success: true, count: genres.length, genres });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Obtener ofertas activas públicas
+exports.getActiveOffers = async (req, res, next) => {
+  try {
+    const activeDiscountsMap = await discountDAO.getAllActiveDiscountsMap();
+    if (!activeDiscountsMap || activeDiscountsMap.size === 0) {
+      return res.json({ success: true, count: 0, offers: [] });
+    }
+
+    const gameIds = Array.from(activeDiscountsMap.keys());
+    const gamesList = [];
+
+    for (const gId of gameIds) {
+      try {
+        const game = await igdbService.getGameById(gId);
+        if (game) {
+          gamesList.push(game);
+        }
+      } catch (err) {
+        console.error(`Error al obtener juego #${gId} para ofertas:`, err.message);
+      }
+    }
+
+    const enriched = await enrichGames(gamesList, req.user?.id_usuario);
+    const offersArray = Array.isArray(enriched) ? enriched : (enriched ? [enriched] : []);
+    const activeOffersOnly = offersArray.filter(g => g && g.hasDiscount);
+
+    res.json({ success: true, count: activeOffersOnly.length, offers: activeOffersOnly });
   } catch (error) {
     next(error);
   }

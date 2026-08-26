@@ -143,39 +143,78 @@ class IGDBService {
   // BUSCAR JUEGOS
   // ==========================================
 
-  async searchGames(query, limit = 20) { 
-    const fields = [ 
-        'id', 
-        'name', 
-        'cover.image_id', 
-        'summary', 
-        'first_release_date', 
-        'genres.name', 
-        'platforms.name', 
-        'rating', 
-        'total_rating', 
-        'aggregated_rating' 
-    ].join(','); 
-    const cacheKey = `search_${query}_${limit}`; 
-    const cached = cache.get(cacheKey); 
-    if (cached) { console.log('📦 Respuesta desde caché'); return cached; }
+  async searchGames(query, limit = 20) {
+    const fields = [
+      'id',
+      'name',
+      'cover.image_id',
+      'summary',
+      'first_release_date',
+      'genres.name',
+      'platforms.name',
+      'rating',
+      'total_rating',
+      'total_rating_count',
+      'aggregated_rating',
+      'category'
+    ].join(',');
+    const cacheKey = `search_${query}_${limit}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      console.log('📦 Respuesta desde caché');
+      return cached;
+    }
 
-    const results = await this.query( 'games', fields, '', limit, '', query ); 
-    const transformed = results.map(game => 
-        ({ 
-            id: game.id,  
-            name: game.name, 
-            cover: game.cover?.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${game.cover.image_id}.jpg` : null, 
-            summary: game.summary || 'Sin descripción disponible', 
-            releaseDate: game.first_release_date ? new Date( game.first_release_date * 1000 ).getFullYear() : 'TBD', 
-            genres: game.genres?.map( genre => genre.name ) || [], 
-            platforms: game.platforms?.map( platform => platform.name ) || [], 
-            rating: game.total_rating ?? game.rating ?? 0, 
-            aggregatedRating: game.aggregated_rating ?? 0 
-        })); 
-            
-        cache.set(cacheKey, transformed); return transformed; 
-        }
+    const results = await this.query('games', fields, '', limit, '', query);
+
+    // Algoritmo de Relevancia Inteligente de 4 niveles
+    results.sort((a, b) => {
+      const q = String(query).trim().toLowerCase();
+      const nameA = String(a.name || '').toLowerCase();
+      const nameB = String(b.name || '').toLowerCase();
+
+      // 1. Coincidencia exacta del título
+      const exactA = nameA === q ? 1000 : 0;
+      const exactB = nameB === q ? 1000 : 0;
+
+      // 2. Título que comienza con la consulta
+      const startsA = nameA.startsWith(q) ? 500 : 0;
+      const startsB = nameB.startsWith(q) ? 500 : 0;
+
+      // 3. Juego Principal en IGDB (category === 0)
+      const catA = (a.category === 0 || a.category === undefined) ? 300 : 0;
+      const catB = (b.category === 0 || b.category === undefined) ? 300 : 0;
+
+      // 4. Valoración y volumen de reseñas
+      const ratingScoreA = (a.total_rating ?? a.rating ?? 0) + (a.total_rating_count ? Math.min(a.total_rating_count, 100) : 0);
+      const ratingScoreB = (b.total_rating ?? b.rating ?? 0) + (b.total_rating_count ? Math.min(b.total_rating_count, 100) : 0);
+
+      const scoreA = exactA + startsA + catA + ratingScoreA;
+      const scoreB = exactB + startsB + catB + ratingScoreB;
+
+      return scoreB - scoreA;
+    });
+
+    const transformed = results.map(game => ({
+      id: game.id,
+      name: game.name,
+      cover: game.cover?.image_id
+        ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${game.cover.image_id}.jpg`
+        : null,
+      summary: game.summary || 'Sin descripción disponible',
+      releaseDate: game.first_release_date
+        ? new Date(game.first_release_date * 1000).getFullYear()
+        : 'TBD',
+      genres: game.genres?.map(genre => genre.name) || [],
+      platforms: game.platforms?.map(platform => platform.name) || [],
+      rating: game.total_rating ?? game.rating ?? 0,
+      aggregatedRating: game.aggregated_rating ?? 0,
+      category: game.category ?? 0
+    }));
+
+    cache.set(cacheKey, transformed);
+    return transformed;
+  }
 
   // ==========================================
   // OBTENER JUEGO POR ID
@@ -403,7 +442,7 @@ class IGDBService {
   // ==========================================
   // Explorar todos los juegos
   // ==========================================
-  async getAllGames(limit = 20, offset = 0, genreId = null) {
+  async getAllGames(limit = 20, offset = 0, genreId = null, year = null) {
     const fields = [
       'id',
       'name',
@@ -416,7 +455,7 @@ class IGDBService {
     ].join(',');
 
     // CACHE
-    const cacheKey = `all_games_${limit}_${offset}_${genreId || 'all'}`;
+    const cacheKey = `all_games_${limit}_${offset}_${genreId || 'all'}_${year || 'all'}`;
     const cached = cache.get(cacheKey);
 
     if (cached) {
@@ -424,11 +463,16 @@ class IGDBService {
       return cached;
     }
 
-    // fecha actual
-    const currentTimestamp = Math.floor(Date.now() / 1000);
-
-    // Filtro base
-    let where = `first_release_date < ${currentTimestamp}`;
+    // Filtro de fecha/año
+    let where = `first_release_date != null`;
+    if (year && !isNaN(year) && year > 1970 && year < 2100) {
+      const startTimestamp = Math.floor(new Date(`${year}-01-01T00:00:00Z`).getTime() / 1000);
+      const endTimestamp = Math.floor(new Date(`${year}-12-31T23:59:59Z`).getTime() / 1000);
+      where += ` & first_release_date >= ${startTimestamp} & first_release_date <= ${endTimestamp}`;
+    } else {
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      where += ` & first_release_date < ${currentTimestamp}`;
+    }
 
     // Filtro de genero
     if (genreId !== null) {

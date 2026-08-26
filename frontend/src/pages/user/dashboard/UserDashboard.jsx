@@ -1,61 +1,71 @@
-import { useEffect, useState, useRef } from "react"; // ✅ Agrega useRef
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/useAuth";
 import Navbar from "../../../components/navbar/Navbar";
 import Sidebar from "../../../components/Sidebar/Sidebar";
+import { getAvatarUrl, generateSVGPlaceholder } from "../../../utils/avatarUtils";
 import "./UserDashboard.css";
 
-import { updateProfile, updateAvatar, getFavorites, deleteFavorite, getPurchases } from "../../../api/userApi"; // ✅ Importa updateAvatar
+import { updateProfile, updateAvatar, getFavorites, deleteFavorite, getLibrary } from "../../../api/userApi";
 
+// Componente principal para el panel de control del usuario.
 export default function UserDashboard() {
-  const { user, login } = useAuth(); // ✅ Asegúrate de que login esté disponible para actualizar contexto
+  const { user, login } = useAuth();
   const navigate = useNavigate();
-  const fileInputRef = useRef(null); // ✅ Referencia para el input file
+  const fileInputRef = useRef(null);
 
+  // Estados locales para favoritos, biblioteca, edicion de datos y carga de avatar
   const [favorites, setFavorites] = useState([]);
   const [library, setLibrary] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
-  // ✅ Estado para preview del avatar
-  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || '/uploads/avatars/default-avatar.png');
+  const [avatarPreview, setAvatarPreview] = useState(getAvatarUrl(user));
 
+  // Estado del formulario con la informacion personal del usuario
   const [formData, setFormData] = useState({
     nickname: user?.nickname || "",
-    name: user?.name || "",
+    name: user?.name || user?.nombre || "",
     email: user?.email || "",
-    password: "********"
+    password: ""
   });
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Carga la lista de juegos favoritos y actualiza la vista previa del avatar al detectar cambios en el usuario
   useEffect(() => {
     if (!user) return;
-    getFavorites().then(setFavorites);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAvatarPreview(user.avatar || '/uploads/avatars/default-avatar.png');
+    setFormData({
+      nickname: user.nickname || "",
+      name: user.name || user.nombre || "",
+      email: user.email || "",
+      password: ""
+    });
+    getFavorites().then(setFavorites).catch(console.error);
+    setAvatarPreview(getAvatarUrl(user));
   }, [user]);
 
+  // Carga los juegos adquiridos en la biblioteca del usuario
   useEffect(() => {
     if (!user) return;
-    getPurchases().then(setLibrary);
+    getLibrary().then(setLibrary).catch(console.error);
   }, [user]);
 
   if (!user) return null;
 
-  // ✅ Manejar clic en "Cambiar foto"
+  // Activa el selector de archivos oculto al hacer clic en el avatar o boton de subir
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
 
-  // ✅ Manejar selección de archivo
+  // Valida el tipo y tamaño de la imagen seleccionada, genera la vista previa y ejecuta la subida
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validaciones básicas
     if (!file.type.match('image.*')) {
-      alert('Solo se permiten imágenes');
+      alert('Solo se permiten archivos de imagen (JPG, PNG, WEBP, GIF)');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -63,37 +73,57 @@ export default function UserDashboard() {
       return;
     }
 
-    // Preview local inmediato
-    setAvatarPreview(URL.createObjectURL(file));
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarPreview(objectUrl);
 
-    // Subir al backend
+    // Envia la imagen seleccionada al servidor y actualiza los datos del usuario en la sesion
     const upload = async () => {
+      setUploadingAvatar(true);
       try {
         const response = await updateAvatar(file);
-        
-        // ✅ Actualizar contexto de auth para que el navbar muestre la nueva foto
-        const updatedUser = { ...user, avatar: response.avatar_url };
-        login(updatedUser); // Esto actualiza localStorage y contexto
-        
-        alert('✅ Avatar actualizado');
+        const newAvatarUrl = response.avatar_url;
+        const updatedUser = { ...user, avatar: newAvatarUrl, avatar_url: newAvatarUrl };
+        login(updatedUser);
+        setAvatarPreview(newAvatarUrl);
+        alert('Foto de perfil actualizada con éxito');
       } catch (error) {
         console.error('Error al subir avatar:', error);
-        alert(`❌ Error: ${error.message}`);
-        // Revertir preview si falla
-        setAvatarPreview(user?.avatar || '/uploads/avatars/default-avatar.png');
+        alert(`Error al subir avatar: ${error.message}`);
+        setAvatarPreview(getAvatarUrl(user));
+      } finally {
+        setUploadingAvatar(false);
       }
     };
     
     upload();
-    
-    // Limpiar input para permitir seleccionar el mismo archivo nuevamente
     e.target.value = '';
   };
 
+  // Alterna entre el modo de edicion y lectura. Si se esta editando, guarda los cambios en el servidor
   const handleEditToggle = async () => {
     if (isEditing) {
       try {
-        await updateProfile(user.id, formData);
+        const payload = {
+          name: formData.name,
+          nickname: formData.nickname
+        };
+
+        // Solo incluir la contraseña si el usuario escribio una nueva
+        if (formData.password && formData.password.trim() !== "") {
+          if (formData.password.trim().length < 4) {
+            alert("La contraseña debe tener al menos 4 caracteres.");
+            return;
+          }
+          payload.password = formData.password.trim();
+        }
+
+        const res = await updateProfile(user.id || user.id_usuario, payload);
+
+        if (res.user) {
+          login({ ...user, ...res.user });
+        }
+        setFormData(prev => ({ ...prev, password: "" }));
+        setShowPassword(false);
         alert("Perfil actualizado con éxito");
       } catch (error) {
         alert("Error al actualizar: " + error.message);
@@ -103,10 +133,11 @@ export default function UserDashboard() {
     setIsEditing(!isEditing);
   };
 
+  // Elimina un juego de los favoritos del usuario mediante la API y actualiza la lista local
   const handleDeleteFavorite = async (id_juego) => {
     try {
       await deleteFavorite(id_juego);
-      setFavorites(prev => prev.filter(game => game.id_juego !== id_juego));
+      setFavorites(prev => prev.filter(game => Number(game.id_juego) !== Number(id_juego)));
     } catch (error) {
       console.error("Error eliminando favorito:", error);
       alert("No se pudo eliminar el favorito");
@@ -115,173 +146,226 @@ export default function UserDashboard() {
 
   return (
     <>
-    <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-    <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-    <div className="user-dashboard container-fluid">
-      <div className="row g-4">
-        {/* PERFIL */}
-        <div className="col-xl-3 col-lg-4 col-md-12">
-          <div className="ud-card ud-profile">
-            
-            {/* ✅ Avatar con clic para cambiar */}
-            <div 
-              className="ud-avatar-container position-relative d-inline-block"
-              onClick={handleAvatarClick}
-              style={{ cursor: 'pointer' }}
-            >
-              <img 
-                src={avatarPreview} 
-                className="ud-avatar" 
-                alt="avatar" 
-                style={{ width: 120, height: 120, borderRadius: '50%', objectFit: 'cover' }}
-              />
-              {/* Overlay de edición */}
-              <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-                   style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '50%', opacity: 0, transition: 'opacity 0.2s' }}
-                   onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                   onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
+      <div className="user-dashboard container-fluid py-4">
+        <div className="row g-4">
+          {/* PERFIL */}
+          <div className="col-xl-3 col-lg-4 col-md-12">
+            <div className="ud-card ud-profile">
+              
+              {/* Avatar con Trigger de Clic */}
+              <div 
+                className="ud-avatar-container position-relative d-inline-block"
+                onClick={handleAvatarClick}
+                title="Haz clic para cambiar tu foto de perfil"
+                style={{ cursor: 'pointer' }}
               >
-                <i className="bi bi-camera-fill text-white fs-4"></i>
-              </div>
-            </div>
-            
-            {/* ✅ Input file oculto */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={handleAvatarChange}
-              hidden
-            />
-
-            <h4 className="mt-3">{user.nickname}</h4>
-            <p className="ud-email">{user.email}</p>
-
-            <div className="ud-form mt-4">
-              <div className="form-floating mb-3">
-                <input
-                  className="form-control ud-input"
-                  value={formData.nickname}
-                  disabled={!isEditing}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nickname: e.target.value })
-                  }
+                <img 
+                  src={avatarPreview} 
+                  className="ud-avatar" 
+                  alt="avatar" 
+                  style={{ width: 130, height: 130, borderRadius: '50%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    // En caso de error al cargar imagen, genera un placeholder SVG con la inicial
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = generateSVGPlaceholder(user.nickname || user.nombre || 'U');
+                  }}
                 />
-                <label>Nickname</label>
-              </div>
-
-              <div className="form-floating mb-3">
-                <input
-                  className="form-control ud-input"
-                  value={formData.name}
-                  disabled={!isEditing}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                />
-                <label>Nombre</label>
-              </div>
-
-              <div className="form-floating mb-3">
-                <input
-                  className="form-control ud-input"
-                  value={formData.email}
-                  disabled={!isEditing}
-                />
-                <label>Email</label>
-              </div>
-
-              <div className="form-floating position-relative mb-4">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="form-control ud-input"
-                  value={formData.password}
-                  disabled={!isEditing}
-                />
-                <label>Contraseña</label>
-                <button
-                  type="button"
-                  className="ud-eye-btn"
-                  onClick={() => setShowPassword(!showPassword)}
+                
+                {/* Overlay flotante */}
+                <div 
+                  className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                  style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '50%', opacity: uploadingAvatar ? 1 : 0, transition: 'opacity 0.25s ease' }}
+                  onMouseEnter={(e) => { if (!uploadingAvatar) e.currentTarget.style.opacity = '1'; }}
+                  onMouseLeave={(e) => { if (!uploadingAvatar) e.currentTarget.style.opacity = '0'; }}
                 >
-                  <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`} />
+                  {uploadingAvatar ? (
+                    <div className="spinner-border text-light spinner-border-sm" role="status"></div>
+                  ) : (
+                    <>
+                      <i className="bi bi-camera-fill text-white fs-4"></i>
+                      <small className="text-white fw-bold" style={{ fontSize: '0.75rem' }}>Cambiar foto</small>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarChange}
+                hidden
+              />
+
+              <div className="mt-2">
+                <button 
+                  className="btn btn-sm btn-outline-primary rounded-pill px-3 mt-1"
+                  onClick={handleAvatarClick}
+                >
+                  <i className="bi bi-upload me-1"></i> Subir Avatar
                 </button>
               </div>
 
-              <button
-                className={`ud-btn-${isEditing ? "primary" : "outline"} w-100`}
-                onClick={handleEditToggle} // Llama a la función asíncrona
-              >
-                {isEditing ? "Guardar cambios" : "Editar información"}
-              </button>
+              <h4 className="mt-3 text-white">{user.nickname}</h4>
+              <p className="ud-email text-white">{user.email}</p>
+
+              <div className="ud-form mt-4">
+                <div className="form-floating mb-3">
+                  <input
+                    className="form-control ud-input"
+                    value={formData.nickname}
+                    disabled={!isEditing}
+                    onChange={(e) =>
+                      setFormData({ ...formData, nickname: e.target.value })
+                    }
+                  />
+                  <label>Nickname</label>
+                </div>
+
+                <div className="form-floating mb-3">
+                  <input
+                    className="form-control ud-input"
+                    value={formData.name}
+                    disabled={!isEditing}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                  />
+                  <label>Nombre</label>
+                </div>
+
+                <div className="form-floating mb-3">
+                  <input
+                    className="form-control ud-input"
+                    value={formData.email}
+                    disabled={true}
+                  />
+                  <label>Email</label>
+                </div>
+
+                <div className="form-floating position-relative mb-4">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control ud-input"
+                    placeholder="Nueva contraseña (opcional)"
+                    value={formData.password}
+                    disabled={!isEditing}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    style={{ paddingRight: (isEditing && formData.password.length > 0) ? '45px' : undefined }}
+                  />
+                  <label>Contraseña {isEditing ? "(opcional)" : ""}</label>
+                  {isEditing && formData.password.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn border-0 text-secondary position-absolute top-50 end-0 translate-middle-y me-2"
+                      onClick={(e) => {
+                        // Alterna el estado de visibilidad de la contraseña
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowPassword(prev => !prev);
+                      }}
+                      style={{ zIndex: 10, cursor: 'pointer', background: 'transparent' }}
+                    >
+                      <i className={`bi ${showPassword ? "bi-eye-slash-fill text-warning" : "bi-eye-fill text-light"} fs-5`} />
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  className={`ud-btn-${isEditing ? "primary" : "outline"} w-100`}
+                  onClick={handleEditToggle}
+                >
+                  {isEditing ? "Guardar cambios" : "Editar información"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* CONTENIDO */}
-        <div className="col-xl-9 col-lg-8 col-md-12">
-          {/* FAVORITOS */}
-          <div className="ud-card mb-4">
-            <h5 className="ud-section-title">
-              <i className="bi bi-heart-fill text-danger"></i> Favoritos
-            </h5>
+          {/* CONTENIDO */}
+          <div className="col-xl-9 col-lg-8 col-md-12">
+            {/* FAVORITOS */}
+            <div className="ud-card mb-4">
+              <h5 className="ud-section-title">
+                <i className="bi bi-heart-fill text-danger me-2"></i> Mis Favoritos
+              </h5>
 
-            <div className="ud-games-grid">
-              { favorites.length === 0 ? (
-                <p className="text-center">No tienes juegos favoritos.</p>
-              ) : (
-                favorites.map((game) => (
-                  <div key={game.id_juego} className="ud-game-card position-relative">
-                    {/* Botón Flotante */}
-                    <button 
-                      className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 shadow-sm delete-favorite-btn"
-                      title="Eliminar de favoritos"
-                      onClick={() => handleDeleteFavorite(game.id_juego)}
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
+              <div className="ud-games-grid">
+                { favorites.length === 0 ? (
+                  <p className="text-center text-white py-4">No tienes juegos favoritos agregados.</p>
+                ) : (
+                  favorites.map((game) => (
+                    <div key={game.id_juego} className="ud-game-card position-relative">
+                      <button 
+                        className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 shadow-sm delete-favorite-btn"
+                        title="Eliminar de favoritos"
+                        onClick={() => handleDeleteFavorite(game.id_juego)}
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
 
-                    <img src={game.imagen_url} alt={game.nombre} className="img-fluid" />
+                      <img 
+                        src={game.imagen_url || '/nulls/placeholder-game.svg'} 
+                        alt={game.nombre} 
+                        className="img-fluid"
+                        onError={(e) => {
+                          // Si falla la carga de la imagen del juego, usa un placeholder por defecto
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/nulls/placeholder-game.svg";
+                        }}
+                      />
 
+                      <div className="ud-game-info p-2">
+                        <h6 className="text-truncate text-white">{game.nombre}</h6>
+                        <button className="ud-btn-primary w-100 mt-2" onClick={() => navigate('/game/' + game.id_juego)}>
+                          Ver Juego
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* BIBLIOTECA */}
+            <div className="ud-card">
+              <h5 className="ud-section-title">
+                <i className="bi bi-controller me-2 text-info"></i> Mi Biblioteca
+              </h5>
+
+              <div className="ud-games-grid">
+                { library.length === 0 ? (
+                  <p className="text-center text-white py-4">No has adquirido juegos aún. ¡Explora el catálogo!</p>
+                ) : (
+                  library.map((game) => (
+                  <div key={game.id_juego} className="ud-game-card">
+                    <img 
+                      src={game.imagen_url || '/nulls/placeholder-game.svg'} 
+                      alt={game.nombre} 
+                      onError={(e) => {
+                        // Si falla la carga de la imagen del juego, usa un placeholder por defecto
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/nulls/placeholder-game.svg";
+                      }}
+                    />
                     <div className="ud-game-info p-2">
-                      <h6 className="text-truncate">{game.nombre}</h6>
-                      <button className="ud-btn-primary w-100" onClick={() => navigate('/game/' + game.id_juego)}>
-                        Ir al juego
+                      <h6 className="text-white text-truncate">{game.nombre}</h6>
+                      <small className="text-muted d-block mb-2">Adquirido: {new Date(game.adquirido_en).toLocaleDateString()}</small>
+                      <button className="btn btn-success btn-sm w-100">
+                        <i className="bi bi-play-fill me-1"></i> Jugar
                       </button>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* BIBLIOTECA */}
-          <div className="ud-card">
-            <h5 className="ud-section-title">
-              <i className="bi bi-controller"></i> Biblioteca
-            </h5>
-
-            <div className="ud-games-grid">
-              { library.length === 0 ? (
-                <p className="text-center">No tienes juegos en tu biblioteca.</p>
-              ) : (
-                library.map((game) => (
-                <div key={game.id_juego} className="ud-game-card">
-                  <img src={game.imagen_url} alt={game.nombre} />
-                  <div className="ud-game-info">
-                    <h6>{game.nombre}</h6>
-                    <button className="ud-btn-primary w-100">
-                      Jugar
-                    </button>
-                  </div>
-                </div>
-              )))}  
+                )))}  
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 }

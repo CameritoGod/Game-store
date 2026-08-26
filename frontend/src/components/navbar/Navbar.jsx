@@ -3,22 +3,17 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/useAuth";
 import { useCart } from "../../context/CartContext";
 import CartDropdown from "../CartDropdown/CartDropdown.jsx";
+import { getAvatarUrl, generateSVGPlaceholder } from "../../utils/avatarUtils";
 import "./nav.css";
 
 export default function Navbar({ onToggleSidebar }) {
-  //User y logout en todo momento
   const { user, logout } = useAuth();
 
-  //Estados del carrito
   const [showCart, setShowCart] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef();
 
-  //Cuenta de catidad de objetos
-  //en el carrito
   const { count } = useCart();
-
-  //Animacion
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
@@ -43,7 +38,6 @@ export default function Navbar({ onToggleSidebar }) {
   }, [count]);
 
   return (
-    //El id home es para el enlace del footer
     <nav className="custom-navbar" id="home">
       {/* Left */}
       <div className="navbar-left">
@@ -65,25 +59,36 @@ export default function Navbar({ onToggleSidebar }) {
               </span>
             )}
           </button>
-          {showCart && <CartDropdown />}
+          {showCart && <CartDropdown onClose={() => setShowCart(false)} />}
         </div>
 
         {/* User */}
         {user ? (
           <div className="user-wrapper" ref={userMenuRef}>
             <button className="user-btn" onClick={() => setShowUserMenu(!showUserMenu)}>
-              <img src={user.avatar} alt="avatar" className="rounded-circle" />
-               <i className="bi bi-caret-down-fill"></i>
+              <img 
+                src={getAvatarUrl(user)} 
+                alt="avatar" 
+                className="rounded-circle"
+                style={{ width: 36, height: 36, objectFit: 'cover' }}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = generateSVGPlaceholder(user?.nickname || user?.nombre || 'U');
+                }}
+              />
+              <i className="bi bi-caret-down-fill ms-1"></i>
             </button>
 
             {showUserMenu && (
               <ul className="user-dropdown">
-                {user.role === "cliente" && (
+                {user.role === "cliente" || user.rol === "cliente" ? (
                   <>
                     <li><Link to="/user">Perfil</Link></li>
                     <li><Link to="/user/history">Mis compras</Link></li>
                   </>
-              )}
+                ) : (
+                  <li><Link to="/admin">Panel Admin</Link></li>
+                )}
                 <li className="divider"></li>
                 <li className="logout" onClick={logout}>Cerrar sesión</li>
               </ul>

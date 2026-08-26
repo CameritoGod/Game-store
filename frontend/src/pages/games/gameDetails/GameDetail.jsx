@@ -141,7 +141,8 @@ export default function GameDetail() {
 
   if (!game) return <p className="text-center text-danger">Juego no encontrado</p>;
 
-  const price = (Math.random() * (60 - 15) + 15).toFixed(2);
+  const price = game.price ? Number(game.price).toFixed(2) : (game.precio ? Number(game.precio).toFixed(2) : "29.99");
+  const isPurchased = Boolean(isOwned || game.isOwned || game.inLibrary);
 
   return (
     <>
@@ -156,10 +157,14 @@ export default function GameDetail() {
 
             {/* Imagen principal */}
             <img
-              src={mainImage}
+              src={mainImage || "/nulls/placeholder-game.svg"}
               alt={game.name}
               className="main-game-image fade-image"
               key={mainImage} // fuerza animación al cambiar
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/nulls/placeholder-game.svg";
+              }}
             />
 
             {/* Thumbnails */}
@@ -172,12 +177,16 @@ export default function GameDetail() {
                 .map((img, i) => (
                   <img
                     key={i}
-                    src={img}
+                    src={img || "/nulls/placeholder-game.svg"}
                     alt={`thumb-${i}`}
                     className={`thumbnail ${
                       img === mainImage ? "active-thumb" : ""
                     }`}
                     onClick={() => setMainImage(img)}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/nulls/placeholder-game.svg";
+                    }}
                   />
                 ))}
             </div>
@@ -213,34 +222,49 @@ export default function GameDetail() {
                 {showFullDesc ? "Leer menos ▲" : "Leer más ▼"}
               </button>
 
-              <h3 className="game-price">${price}</h3>
+              {game.hasDiscount && game.oldPrice ? (
+                <div className="d-flex align-items-center gap-3 my-3">
+                  <span className="badge bg-danger fs-6 fw-bold px-3 py-2">{game.discount}</span>
+                  <span className="text-muted text-decoration-line-through fs-4">{game.oldPrice}</span>
+                  <h3 className="game-price text-success m-0">${price}</h3>
+                </div>
+              ) : (
+                <h3 className="game-price my-3">${price}</h3>
+              )}
 
               <div className="game-actions">
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    if (isOwned) {
-                      navigate(`/play/${game.id}`); // o donde se juegue
-                    } else {
+                {isPurchased ? (
+                  <button
+                    className="btn btn-secondary disabled px-4 py-2"
+                    disabled
+                    style={{ opacity: 0.9 }}
+                  >
+                    <i className="bi bi-check-circle-fill text-success me-2"></i> En tu biblioteca
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-primary"
+                    disabled={isInCart(game.id)}
+                    onClick={() => {
                       addToCart({
                         id: game.id,
                         title: game.name,
                         image: game.image,
                         price
                       });
-                    }
-                  }}
-                >
-                  {isOwned ? "Jugar" : isInCart(game.id) ? "En el carrito" : "Añadir al carrito"}
-                  <i className={`bi ${isOwned ? "bi-play-fill" : "bi-cart-plus"}`} />
-                </button>
+                    }}
+                  >
+                    {isInCart(game.id) ? "En el carrito" : "Añadir al carrito"}
+                    <i className="bi bi-cart-plus ms-2" />
+                  </button>
+                )}
 
                 <button
                   className={`btn ${isFavorite ? "btn-danger" : "btn-outline-light"}`}
                   onClick={handleFavoriteToggle}
                 >
                   {isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
-                  <i className={`bi ${isFavorite ? "bi-heart-fill text-light" : "bi-heart"} text-danger`}></i>
+                  <i className={`bi ${isFavorite ? "bi-heart-fill text-light" : "bi-heart"} text-danger ms-2`}></i>
                 </button>
 
               </div>
@@ -252,20 +276,23 @@ export default function GameDetail() {
         <section className="related-games mt-5">
           <h3><i className="bi bi-dpad text-primary"></i> Juegos relacionados</h3>
           <div className="related-grid">
-            {relatedGames.map((g) => (
-              <div key={g.id} className="related-card d-flex flex-column justify-content-center aling-item-center">
-                <img src={g.image} alt={g.title} />
-                <h5>{g.title}</h5>
-                <span className="fs-6 text-success">${(Math.random() * (60 - 15) + 15).toFixed(2)}</span>
+            {relatedGames.map((g) => {
+              const relPrice = g.price ? Number(g.price).toFixed(2) : (g.precio ? Number(g.precio).toFixed(2) : "29.99");
+              return (
+                <div key={g.id} className="related-card d-flex flex-column justify-content-center aling-item-center">
+                  <img src={g.image} alt={g.title} />
+                  <h5>{g.title}</h5>
+                  <span className="fs-6 text-success">${relPrice}</span>
                   <div className="p-1">
-                    <button className="btn btn-outline-light" onClick={()=>{
-                      navigate(`/game/${g.id}`)
+                    <button className="btn btn-outline-light" onClick={() => {
+                      navigate(`/game/${g.id}`);
                     }}>
                       Ver detalles
                     </button>
                   </div>
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </section>
 

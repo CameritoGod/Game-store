@@ -6,29 +6,38 @@ import { useAuth } from "../../auth/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-import { getPurchases } from "../../api/userApi";
+import { getLibrary } from "../../api/userApi";
+import { getGenres } from "../../api/api";
 
 export default function Sidebar({ open, onClose }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-
   const [library, setLibrary] = useState([]);
+  const [genres, setGenres] = useState([]);
 
-    useEffect(() => {
-      if (!user) return;
-      getPurchases().then(setLibrary);
-    }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    getLibrary()
+      .then(data => setLibrary(Array.isArray(data) ? data : []))
+      .catch(err => {
+        console.error("Error cargando biblioteca en sidebar:", err);
+        setLibrary([]);
+      });
+  }, [user]);
 
+  useEffect(() => {
+    getGenres().then(setGenres).catch(console.error);
+  }, []);
 
-  const filterNavigate = (genre) => {
-    navigate(`/allgame?genre=${genre}&page=1`);
+  const filterNavigate = (genreId) => {
+    navigate(`/AllGame?genre=${genreId}&page=1`);
     onClose();
   };
 
   const handleSearch = (e) => {
     if (e.key === "Enter" && search.trim()) {
-      navigate(`/allgame?search=${search}&page=1`);
+      navigate(`/AllGame?search=${encodeURIComponent(search.trim())}&page=1`);
       setSearch("");
       onClose();
     }
@@ -73,7 +82,7 @@ export default function Sidebar({ open, onClose }) {
             <a href="#trending">
               <li onClick={() => navigate("/")}>
                 <i className="bi bi-fire"></i> Tendencias / Home
-            </li>
+              </li>
             </a>
             <a href="#recomemend">
               <li onClick={() => navigate("/")}>
@@ -93,35 +102,41 @@ export default function Sidebar({ open, onClose }) {
         <div className="sidebar-section">
           <h6>Categorías</h6>
           <ul>
-            <li onClick={() => filterNavigate("action")}>
-              <i className="bi bi-lightning"></i>
-              Acción
-            </li>
-            <li onClick={() => filterNavigate("5")}>
-              <i className="bi bi-controller"></i>
-              RPG
-            </li>
-            <li onClick={() => filterNavigate("shooter")}>
-              <i className="bi bi-crosshair"></i>
-              Shooter
-            </li>
-            <li onClick={() => filterNavigate("indie")}>
-              <i className="bi bi-puzzle"></i>
-              Indie
-            </li>
-            <li onClick={() => filterNavigate("strategy")}>
-              <i className="bi bi-diagram-3"></i>
-              Estrategia
-            </li>
+            {genres && genres.length > 0 ? (
+              genres.slice(0, 8).map((g) => (
+                <li key={g.id} onClick={() => filterNavigate(g.id)}>
+                  <i className="bi bi-controller"></i>
+                  {g.name}
+                </li>
+              ))
+            ) : (
+              <>
+                <li onClick={() => filterNavigate("4")}>
+                  <i className="bi bi-lightning"></i> Acción
+                </li>
+                <li onClick={() => filterNavigate("12")}>
+                  <i className="bi bi-controller"></i> RPG
+                </li>
+                <li onClick={() => filterNavigate("5")}>
+                  <i className="bi bi-crosshair"></i> Shooter
+                </li>
+                <li onClick={() => filterNavigate("32")}>
+                  <i className="bi bi-puzzle"></i> Indie
+                </li>
+                <li onClick={() => filterNavigate("15")}>
+                  <i className="bi bi-diagram-3"></i> Estrategia
+                </li>
+              </>
+            )}
           </ul>
         </div>
 
-      {/* Biblioteca */}
+        {/* Biblioteca */}
         <div className="sidebar-section">
           <h6>Tu biblioteca</h6>
           <ul className="library-list">
             {library.length === 0 ? (
-              <li>No tienes juegos en tu biblioteca</li>
+              <li className="text-muted">No tienes juegos en tu biblioteca</li>
             ) : (
               library.map((game) => (
                 <li 
@@ -131,7 +146,7 @@ export default function Sidebar({ open, onClose }) {
                     onClose();
                   }}
                 >
-                  <i className="bi bi-play-circle"></i> {game.nombre}
+                  <i className="bi bi-play-circle me-2 text-info"></i> {game.nombre}
                 </li>
               ))
             )}

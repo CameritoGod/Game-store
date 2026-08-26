@@ -1,0 +1,202 @@
+/* ==========================================================================
+   GAME AUTOCOMPLETE STYLES (DARK GLASSMORPHISM)
+   ========================================================================== */
+
+.game-autocomplete-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.autocomplete-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input-search-icon {
+  position: absolute;
+  left: 12px;
+  color: #a78bfa;
+  font-size: 1rem;
+}
+
+.autocomplete-input {
+  background: #0e0e12 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 10px !important;
+  padding: 10px 38px 10px 38px !important;
+  color: #ffffff !important;
+  font-size: 0.9rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  transition: all 0.25s ease !important;
+}
+
+.autocomplete-input:focus {
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.35) !important;
+  background: #14141a !important;
+}
+
+.input-spinner {
+  position: absolute;
+  right: 12px;
+}
+
+/* Dropdown Flotante - Ajustado sin desbordamiento horizontal */
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  z-index: 1050;
+  margin-top: 6px;
+  background: rgba(18, 18, 26, 0.98);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 0;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
+}
+
+.autocomplete-dropdown::-webkit-scrollbar {
+  width: 5px;
+}
+.autocomplete-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.4);
+  border-radius: 4px;
+}
+
+.dropdown-loading-item,
+.dropdown-empty-item {
+  padding: 14px 16px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-game-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dropdown-game-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-game-item:hover {
+  background: rgba(124, 58, 237, 0.15);
+}
+
+.dropdown-game-item.selected {
+  opacity: 0.6;
+  cursor: default;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dropdown-game-img {
+  width: 38px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.dropdown-game-info {
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.dropdown-game-name {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-game-meta {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.dropdown-game-price {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+/* Chips / Etiquetas de Juegos Seleccionados */
+.selected-games-chips {
+  background: rgba(14, 14, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.chips-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.game-tag-chip {
+  background: linear-gradient(135deg, rgba(61, 0, 102, 0.8), rgba(122, 44, 255, 0.6));
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+}
+
+.chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-chip-remove {
+  background: transparent;
+  border: none;
+  color: #f87171;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.btn-chip-remove:hover {
+  color: #ffffff;
+}

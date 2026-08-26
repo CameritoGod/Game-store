@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './pages/auth/login/Login.jsx';
-// import AdminDashboard from './pages/admin/dashboard/AdminDashboard';
+import AdminDashboard from './pages/admin/dashboard/AdminDashboard';
 import UserDashboard from './pages/user/dashboard/UserDashboard';
 import Home from './pages/home/Home';
 import PrivateRoute from './auth/PrivateRoute';
