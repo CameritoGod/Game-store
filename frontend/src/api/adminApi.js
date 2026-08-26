@@ -20,6 +20,11 @@ export const setCatalogPrice = async (priceData) => {
   return data;
 };
 
+export const toggleCatalogStatus = async (statusData) => {
+  const { data } = await api.put("/admin/catalog/toggle", statusData);
+  return data;
+};
+
 export const getDiscounts = async () => {
   const { data } = await api.get("/admin/discounts");
   return data;

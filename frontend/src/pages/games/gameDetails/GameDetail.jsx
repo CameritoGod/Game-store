@@ -222,7 +222,15 @@ export default function GameDetail() {
                 {showFullDesc ? "Leer menos ▲" : "Leer más ▼"}
               </button>
 
-              <h3 className="game-price">${price}</h3>
+              {game.hasDiscount && game.oldPrice ? (
+                <div className="d-flex align-items-center gap-3 my-3">
+                  <span className="badge bg-danger fs-6 fw-bold px-3 py-2">{game.discount}</span>
+                  <span className="text-muted text-decoration-line-through fs-4">{game.oldPrice}</span>
+                  <h3 className="game-price text-success m-0">${price}</h3>
+                </div>
+              ) : (
+                <h3 className="game-price my-3">${price}</h3>
+              )}
 
               <div className="game-actions">
                 {isPurchased ? (

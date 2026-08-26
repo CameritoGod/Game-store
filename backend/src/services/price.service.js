@@ -1,6 +1,7 @@
 /**
- * Servicio de Cálculo Determinista de Precios (PriceService)
- * Garantiza que para el mismo id_juego (IGDB ID), el precio calculado sea constante y predecible.
+ * Servicio de Cálculo Determinista de Precios y Aplicación de Ofertas (PriceService)
+ * Garantiza que para el mismo id_juego (IGDB ID), el precio base sea constante y predecible,
+ * y aplica dinámicamente las promociones activas si existen en la base de datos.
  */
 class PriceService {
   /**
@@ -25,28 +26,56 @@ class PriceService {
   }
 
   /**
-   * Adjunta el precio determinista a un objeto de juego individual.
+   * Adjunta el precio determinista y calcula la oferta activa si existe.
    * @param {Object} game - Objeto de juego
-   * @returns {Object} Objeto enriquecido con propiedades de precio
+   * @param {Map<number, Object>} activeDiscountsMap - Mapa opcional de ofertas activas por id_juego
+   * @returns {Object} Objeto enriquecido con propiedades de precio u oferta
    */
-  attachPrice(game) {
+  attachPrice(game, activeDiscountsMap = null) {
     if (!game) return game;
-    const basePrice = this.calculateBasePrice(game.id || game.id_juego);
+
+    const gameId = Number(game.id || game.id_juego);
+    const basePrice = this.calculateBasePrice(gameId);
+
+    // Verificar si el juego tiene una oferta activa
+    const activeDiscount = activeDiscountsMap ? activeDiscountsMap.get(gameId) : null;
+
+    if (activeDiscount && activeDiscount.porcentaje > 0) {
+      const percentage = activeDiscount.porcentaje;
+      const finalPrice = parseFloat((basePrice * (1 - percentage / 100)).toFixed(2));
+
+      return {
+        ...game,
+        price: finalPrice.toFixed(2),
+        precio: finalPrice,
+        oldPrice: `$${basePrice.toFixed(2)}`,
+        precio_original: basePrice,
+        discount: `-${percentage}%`,
+        porcentaje_descuento: percentage,
+        descuento_nombre: activeDiscount.nombre,
+        hasDiscount: true
+      };
+    }
+
     return {
       ...game,
       price: basePrice.toFixed(2),
-      precio: basePrice
+      precio: basePrice,
+      oldPrice: `$${basePrice.toFixed(2)}`,
+      precio_original: basePrice,
+      hasDiscount: false
     };
   }
 
   /**
-   * Adjunta el precio determinista a un arreglo de juegos.
+   * Adjunta los precios y ofertas a un arreglo de juegos.
    * @param {Array} games - Lista de juegos
-   * @returns {Array} Lista de juegos con precios constantes
+   * @param {Map<number, Object>} activeDiscountsMap - Mapa opcional de ofertas activas
+   * @returns {Array} Lista de juegos con precios calculados
    */
-  attachPrices(games) {
+  attachPrices(games, activeDiscountsMap = null) {
     if (!Array.isArray(games)) return [];
-    return games.map((g) => this.attachPrice(g));
+    return games.map((g) => this.attachPrice(g, activeDiscountsMap));
   }
 }
 

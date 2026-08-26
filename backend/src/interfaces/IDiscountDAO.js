@@ -10,6 +10,10 @@ class IDiscountDAO {
     throw new Error("Method getAllDiscounts() not implemented");
   }
 
+  async getAllActiveDiscountsMap() {
+    throw new Error("Method getAllActiveDiscountsMap() not implemented");
+  }
+
   async getActiveDiscountForGame(id_juego) {
     throw new Error("Method getActiveDiscountForGame() not implemented");
   }

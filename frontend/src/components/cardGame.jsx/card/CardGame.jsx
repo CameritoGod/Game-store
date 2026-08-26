@@ -11,6 +11,9 @@ export default function CardGame({
   genre,
   rating,
   price,
+  oldPrice,
+  discount,
+  hasDiscount,
   image,
   isOwned,
   inLibrary
@@ -31,7 +34,7 @@ export default function CardGame({
   return (
     <motion.div className="card-game-wrapper">
       <div className="card game-card bg-dark text-white">
-        <div className="game-image-wrapper">
+        <div className="game-image-wrapper position-relative">
           <img
             src={image || "/nulls/placeholder-game.svg"}
             alt={title}
@@ -40,9 +43,18 @@ export default function CardGame({
               e.currentTarget.src = "/nulls/placeholder-game.svg";
             }}
           />
+
+          {/* Insignia de Comprado */}
           {isPurchased && (
             <span className="badge bg-success position-absolute top-0 start-0 m-2 px-2 py-1 shadow-sm">
               <i className="bi bi-check-circle-fill me-1"></i> Comprado
+            </span>
+          )}
+
+          {/* Insignia de Oferta/Descuento */}
+          {hasDiscount && discount && (
+            <span className="badge bg-danger position-absolute top-0 end-0 m-2 px-2 py-1 shadow-sm fw-bold">
+              {discount}
             </span>
           )}
         </div>
@@ -52,7 +64,15 @@ export default function CardGame({
           <small className="text-secondary">{genre} • {year}</small>
 
           <div className="mt-auto pt-2">
-            <p className="price m-0 mb-2">{displayPrice}</p>
+            {/* Despliegue de Precios con Descuento si Aplica */}
+            {hasDiscount && oldPrice ? (
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <span className="text-muted text-decoration-line-through small">{oldPrice}</span>
+                <span className="price m-0 text-success fw-bold">{displayPrice}</span>
+              </div>
+            ) : (
+              <p className="price m-0 mb-2">{displayPrice}</p>
+            )}
 
             <div className="d-flex gap-2 card-buttons">
               {isPurchased ? (

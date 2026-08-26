@@ -54,6 +54,19 @@ exports.setCatalogPrice = async (req, res, next) => {
   }
 };
 
+exports.toggleCatalogStatus = async (req, res, next) => {
+  try {
+    const { id_juego, activo } = req.body;
+    if (!id_juego || activo === undefined) {
+      return res.status(400).json({ message: 'Se requiere id_juego y estado activo' });
+    }
+    await catalogDAO.toggleActive(Number(id_juego), Boolean(activo));
+    res.json({ message: 'Estado de visibilidad en catálogo actualizado' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 exports.getDiscounts = async (req, res, next) => {
   try {
     const discounts = await discountDAO.getAllDiscounts();
@@ -65,22 +78,55 @@ exports.getDiscounts = async (req, res, next) => {
 
 exports.createDiscount = async (req, res, next) => {
   try {
-    const { nombre, descripcion, porcentaje, fecha_inicio, fecha_fin, gameIds } = req.body;
+    const { nombre, descripcion, porcentaje, fecha_inicio, fecha_fin, gameIds, games } = req.body;
 
-    if (!nombre || !porcentaje || !fecha_inicio || !fecha_fin) {
+    if (!nombre || porcentaje === undefined || !fecha_inicio || !fecha_fin) {
       return res.status(400).json({ message: 'Nombre, porcentaje, fecha_inicio y fecha_fin son obligatorios' });
+    }
+
+    const pct = parseFloat(porcentaje);
+    if (isNaN(pct) || pct < 1 || pct > 100) {
+      return res.status(400).json({ message: 'El porcentaje de descuento debe estar entre 1% y 100%' });
+    }
+
+    if (new Date(fecha_fin) < new Date(fecha_inicio)) {
+      return res.status(400).json({ message: 'La fecha de fin debe ser posterior o igual a la fecha de inicio' });
+    }
+
+    // Asegurar referencias de juegos en JUEGOS_REFERENCIA antes de asociar
+    const finalGameIds = [];
+
+    if (Array.isArray(games) && games.length > 0) {
+      for (const g of games) {
+        const gId = Number(g.id || g.id_juego);
+        if (gId) {
+          await gameRefDAO.upsert(
+            gId,
+            g.name || g.nombre || `Juego #${gId}`,
+            g.image || g.cover || g.imagen_url || null
+          );
+          finalGameIds.push(gId);
+        }
+      }
+    } else if (Array.isArray(gameIds)) {
+      for (const gId of gameIds.map(Number)) {
+        if (gId) {
+          await gameRefDAO.upsert(gId, `Juego #${gId}`, null);
+          finalGameIds.push(gId);
+        }
+      }
     }
 
     const discountId = await discountDAO.createDiscount(
       {
         nombre,
         descripcion,
-        porcentaje: parseFloat(porcentaje),
+        porcentaje: pct,
         fecha_inicio,
         fecha_fin,
         creado_por: req.user.id_usuario
       },
-      Array.isArray(gameIds) ? gameIds.map(Number) : []
+      finalGameIds
     );
 
     res.status(201).json({ message: 'Campaña de descuento creada con éxito', id_descuento: discountId });

@@ -196,14 +196,42 @@ class PurchaseDAO extends IPurchaseDAO {
   async getAdminMetrics() {
     const [[rev]] = await pool.query(`SELECT COALESCE(SUM(total), 0) AS total_revenue FROM COMPRAS`);
     const [[sales]] = await pool.query(`SELECT COUNT(*) AS total_sales FROM COMPRAS`);
+    const [[monthRes]] = await pool.query(
+      `SELECT COALESCE(SUM(total), 0) AS month_revenue, COUNT(*) AS month_sales
+       FROM COMPRAS
+       WHERE MONTH(fecha_compra) = MONTH(CURRENT_DATE) AND YEAR(fecha_compra) = YEAR(CURRENT_DATE)`
+    );
+
+    const [topGames] = await pool.query(
+      `SELECT d.id_juego, j.nombre, j.imagen_url, COUNT(d.id_detalle) AS total_vendidos
+       FROM DETALLE_COMPRAS d
+       JOIN JUEGOS_REFERENCIA j ON d.id_juego = j.id_juego
+       GROUP BY d.id_juego, j.nombre, j.imagen_url
+       ORDER BY total_vendidos DESC
+       LIMIT 1`
+    );
+
     const [[users]] = await pool.query(`SELECT COUNT(*) AS total_users FROM USUARIOS`);
     const [[disc]] = await pool.query(`SELECT COUNT(*) AS active_discounts FROM DESCUENTOS WHERE CURRENT_DATE BETWEEN fecha_inicio AND fecha_fin`);
 
+    const totalRevenueNum = parseFloat(rev.total_revenue || 0);
+    const totalSalesNum = parseInt(sales.total_sales || 0, 10);
+    const avgTicket = totalSalesNum > 0 ? parseFloat((totalRevenueNum / totalSalesNum).toFixed(2)) : 0;
+
     return {
-      totalRevenue: parseFloat(rev.total_revenue),
-      totalSales: parseInt(sales.total_sales, 10),
-      totalUsers: parseInt(users.total_users, 10),
-      activeDiscounts: parseInt(disc.active_discounts, 10)
+      totalRevenue: totalRevenueNum,
+      monthRevenue: parseFloat(monthRes.month_revenue || 0),
+      monthSales: parseInt(monthRes.month_sales || 0, 10),
+      totalSales: totalSalesNum,
+      averageTicket: avgTicket,
+      topSellingGame: topGames.length > 0 ? {
+        id_juego: topGames[0].id_juego,
+        nombre: topGames[0].nombre,
+        imagen_url: topGames[0].imagen_url || '/nulls/placeholder-game.svg',
+        total_vendidos: parseInt(topGames[0].total_vendidos, 10)
+      } : null,
+      totalUsers: parseInt(users.total_users || 0, 10),
+      activeDiscounts: parseInt(disc.active_discounts || 0, 10)
     };
   }
 }

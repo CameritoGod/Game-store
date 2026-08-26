@@ -17,6 +17,7 @@ router.get('/purchases', adminController.getAllPurchases);
 // Catálogo y Precios
 router.get('/catalog', adminController.getCatalog);
 router.post('/catalog/price', adminController.setCatalogPrice);
+router.put('/catalog/toggle', adminController.toggleCatalogStatus);
 
 // Campañas de Descuento
 router.get('/discounts', adminController.getDiscounts);

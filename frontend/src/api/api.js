@@ -88,20 +88,36 @@ export const gamesRecommendations = async () => {
  */
 export const getAllDiscounts = async () => {
   try {
-    const response = await api.get("/top-rated?limit=2");
-    const gamesList = response.data.games || [];
-    return gamesList.map((game, index) => {
-      const discount = index === 0 ? 50 : 30;
-      const basePrice = game.precio ? Number(game.precio) : (game.price ? Number(game.price) : 59.99);
-      const discountedPrice = (basePrice * (1 - discount / 100)).toFixed(2);
+    const response = await api.get("/offers");
+    const offersList = response.data.offers || [];
+    if (offersList.length > 0) {
+      return offersList.map((game) => ({
+        id: game.id,
+        id_juego: game.id,
+        title: game.name,
+        image: game.cover || "/nulls/placeholder-game.svg",
+        discount: game.discount || `-${game.porcentaje_descuento}%`,
+        oldPrice: game.oldPrice || `$${Number(game.precio_original || 59.99).toFixed(2)}`,
+        price: Number(game.price || game.precio),
+        isOwned: Boolean(game.isOwned || game.inLibrary),
+        inLibrary: Boolean(game.isOwned || game.inLibrary),
+        description: game.summary ? `${game.summary.substring(0, 100)}...` : "Oferta por tiempo limitado."
+      }));
+    }
 
+    // Fallback si no hay campañas activas en BD: top-rated de demostración
+    const fallbackRes = await api.get("/top-rated?limit=2");
+    const fallbackList = fallbackRes.data.games || [];
+    return fallbackList.map((game, index) => {
+      const discountPct = index === 0 ? 50 : 30;
+      const basePrice = game.precio ? Number(game.precio) : 59.99;
+      const discountedPrice = (basePrice * (1 - discountPct / 100)).toFixed(2);
       return {
         id: game.id,
         title: game.name,
         image: game.cover || "/nulls/placeholder-game.svg",
-        discount: `-${discount}%`,
+        discount: `-${discountPct}%`,
         oldPrice: `$${basePrice.toFixed(2)}`,
-        newPrice: `$${discountedPrice}`,
         price: Number(discountedPrice),
         isOwned: Boolean(game.isOwned || game.inLibrary),
         inLibrary: Boolean(game.isOwned || game.inLibrary),

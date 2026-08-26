@@ -40,13 +40,6 @@ export default function Home() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Redirección en caso de usuario administrador
-  useEffect(() => {
-    if (user?.role === "admin") {
-      navigate("/admin", { replace: true });
-    }
-  }, [user, navigate]);
-
   // Ejecución paralela de peticiones a la API
   useEffect(() => {
     let isMounted = true;

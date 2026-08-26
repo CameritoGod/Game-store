@@ -1,12 +1,14 @@
 const igdbService = require('../services/igdb.service');
 const priceService = require('../services/price.service');
 const LibraryDAO = require('../dao/mysql/LibraryDAO');
+const DiscountDAO = require('../dao/mysql/DiscountDAO');
 
 const libraryDAO = new LibraryDAO();
+const discountDAO = new DiscountDAO();
 
 /**
  * Función auxiliar para enriquecer juegos con:
- * 1. Precio determinista y constante basado en su ID (PriceService).
+ * 1. Precio determinista y ofertas vigentes calculadas (PriceService + DiscountDAO).
  * 2. Estado de propiedad en biblioteca (isOwned / inLibrary) si el usuario está autenticado.
  */
 async function enrichGames(games, userId = null) {
@@ -15,7 +17,15 @@ async function enrichGames(games, userId = null) {
   const isArray = Array.isArray(games);
   const gamesList = isArray ? games : [games];
 
-  // Obtener Set de IDs comprados si existe usuario autenticado
+  // 1. Obtener ofertas activas hoy
+  let activeDiscountsMap = new Map();
+  try {
+    activeDiscountsMap = await discountDAO.getAllActiveDiscountsMap();
+  } catch (e) {
+    console.error('Error al obtener ofertas activas en enrichGames:', e.message);
+  }
+
+  // 2. Obtener Set de IDs comprados si existe usuario autenticado
   let ownedIdsSet = new Set();
   if (userId) {
     try {
@@ -26,12 +36,12 @@ async function enrichGames(games, userId = null) {
     }
   }
 
-  // Enriquecer cada juego con precio determinista y propiedad isOwned/inLibrary
+  // 3. Enriquecer cada juego con precio determinista, promociones y propiedad isOwned/inLibrary
   const enriched = gamesList.map((game) => {
-    const gameWithPrice = priceService.attachPrice(game);
-    const owned = ownedIdsSet.has(Number(gameWithPrice.id || gameWithPrice.id_juego));
+    const gameWithPriceAndDiscount = priceService.attachPrice(game, activeDiscountsMap);
+    const owned = ownedIdsSet.has(Number(gameWithPriceAndDiscount.id || gameWithPriceAndDiscount.id_juego));
     return {
-      ...gameWithPrice,
+      ...gameWithPriceAndDiscount,
       isOwned: owned,
       inLibrary: owned
     };
@@ -168,6 +178,38 @@ exports.getGenres = async (req, res, next) => {
   try {
     const genres = await igdbService.getGenres();
     res.json({ success: true, count: genres.length, genres });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Obtener ofertas activas públicas
+exports.getActiveOffers = async (req, res, next) => {
+  try {
+    const activeDiscountsMap = await discountDAO.getAllActiveDiscountsMap();
+    if (!activeDiscountsMap || activeDiscountsMap.size === 0) {
+      return res.json({ success: true, count: 0, offers: [] });
+    }
+
+    const gameIds = Array.from(activeDiscountsMap.keys());
+    const gamesList = [];
+
+    for (const gId of gameIds) {
+      try {
+        const game = await igdbService.getGameById(gId);
+        if (game) {
+          gamesList.push(game);
+        }
+      } catch (err) {
+        console.error(`Error al obtener juego #${gId} para ofertas:`, err.message);
+      }
+    }
+
+    const enriched = await enrichGames(gamesList, req.user?.id_usuario);
+    const offersArray = Array.isArray(enriched) ? enriched : (enriched ? [enriched] : []);
+    const activeOffersOnly = offersArray.filter(g => g && g.hasDiscount);
+
+    res.json({ success: true, count: activeOffersOnly.length, offers: activeOffersOnly });
   } catch (error) {
     next(error);
   }

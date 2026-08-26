@@ -15,6 +15,9 @@ router.get('/trending', optionalAuth, gamesController.getTrendingGames);
 // Obtener géneros
 router.get('/genres', gamesController.getGenres);
 
+// Ofertas activas públicas
+router.get('/offers', optionalAuth, gamesController.getActiveOffers);
+
 // Juegos para explorar (con paginación y filtrado por género)
 router.get('/explore', optionalAuth, gamesController.getAllGames);
 
