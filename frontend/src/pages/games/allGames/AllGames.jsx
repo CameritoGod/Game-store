@@ -213,7 +213,9 @@ export default function AllGames() {
                     rating={game.rating}
                     year={game.released?.split("-")[0] || "N/A"}
                     genre={game.genres?.[0] || "Unknown"}
-                    price={(Math.random() * 50 + 10).toFixed(2)}
+                    price={game.price ? Number(game.price).toFixed(2) : (game.precio ? Number(game.precio).toFixed(2) : "29.99")}
+                    isOwned={game.isOwned}
+                    inLibrary={game.inLibrary}
                   />
                 </div>
               ))}

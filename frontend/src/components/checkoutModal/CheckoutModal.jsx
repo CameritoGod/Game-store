@@ -47,7 +47,11 @@ export default function CheckoutModal({ open, onClose, total }) {
   };
 
   // Rellena automáticamente los campos con datos ficticios seguros para pruebas
-  const fillDemoData = () => {
+  const fillDemoData = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setCardNumber("4532 8912 3456 7890");
     setCardHolder("JUGADOR DEMO");
     setExpiry("12/28");
@@ -55,8 +59,11 @@ export default function CheckoutModal({ open, onClose, total }) {
     setError(null);
   };
 
-  // Cierra y resetea el modal de pago
-  const handleClose = () => {
+  // Cierra y resetea el modal de pago de forma segura
+  const handleClose = (e) => {
+    if (e) {
+      e.stopPropagation();
+    }
     if (loading) return;
     setSuccess(false);
     setError(null);
@@ -67,8 +74,20 @@ export default function CheckoutModal({ open, onClose, total }) {
     onClose();
   };
 
+  // Maneja el clic en la capa oscura exterior asegurando que solo cierre si es target directo
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      handleClose(e);
+    }
+  };
+
   // Procesa la compra simulada con retrasos de carga e interacción con el backend
-  const handlePayment = async () => {
+  const handlePayment = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (!cardNumber || !cardHolder || !expiry || !cvv) {
       setError("Por favor completa los datos de la tarjeta de prueba antes de continuar.");
       return;
@@ -119,8 +138,8 @@ export default function CheckoutModal({ open, onClose, total }) {
   };
 
   return (
-    <div className="checkout-overlay" onClick={handleClose}>
-      <div className="checkout-modal-container" onClick={(e) => e.stopPropagation()}>
+    <div className="checkout-overlay" onClick={handleOverlayClick} onMouseDown={handleOverlayClick}>
+      <div className="checkout-modal-container" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
         
         {/* Encabezado del Modal */}
         <div className="checkout-header">
@@ -131,7 +150,7 @@ export default function CheckoutModal({ open, onClose, total }) {
               <small className="text-white">Finalización segura de compra</small>
             </div>
           </div>
-          <button className="checkout-close-btn" onClick={handleClose} disabled={loading}>
+          <button type="button" className="checkout-close-btn" onClick={handleClose} disabled={loading}>
             <i className="bi bi-x-lg"></i>
           </button>
         </div>
@@ -180,15 +199,16 @@ export default function CheckoutModal({ open, onClose, total }) {
 
             <div className="checkout-success-actions mt-4">
               <button
+                type="button"
                 className="checkout-btn-primary w-100 mb-2 py-2 fs-6"
-                onClick={() => {
-                  handleClose();
+                onClick={(e) => {
+                  handleClose(e);
                   navigate("/user");
                 }}
               >
                 <i className="bi bi-controller me-2"></i> Ir a mi Biblioteca
               </button>
-              <button className="checkout-btn-secondary w-100 py-2 fs-6" onClick={handleClose}>
+              <button type="button" className="checkout-btn-secondary w-100 py-2 fs-6" onClick={handleClose}>
                 Seguir Explorando
               </button>
             </div>
@@ -261,7 +281,7 @@ export default function CheckoutModal({ open, onClose, total }) {
                 <i className="bi bi-credit-card me-2"></i> Tarjeta de Prueba
               </h6>
 
-              {/* Previsualización 3D de Tarjeta Simulada */}
+              {/* Previsualización 3D de Tarjeta Simulada (Conservada visible en todos los tamaños) */}
               <div className="simulated-card-preview">
                 <div className="card-preview-top">
                   <i className="bi bi-cpu-fill chip-icon"></i>

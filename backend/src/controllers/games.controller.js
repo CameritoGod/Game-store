@@ -1,4 +1,44 @@
 const igdbService = require('../services/igdb.service');
+const priceService = require('../services/price.service');
+const LibraryDAO = require('../dao/mysql/LibraryDAO');
+
+const libraryDAO = new LibraryDAO();
+
+/**
+ * Función auxiliar para enriquecer juegos con:
+ * 1. Precio determinista y constante basado en su ID (PriceService).
+ * 2. Estado de propiedad en biblioteca (isOwned / inLibrary) si el usuario está autenticado.
+ */
+async function enrichGames(games, userId = null) {
+  if (!games) return games;
+
+  const isArray = Array.isArray(games);
+  const gamesList = isArray ? games : [games];
+
+  // Obtener Set de IDs comprados si existe usuario autenticado
+  let ownedIdsSet = new Set();
+  if (userId) {
+    try {
+      const ownedIds = await libraryDAO.getUserLibraryGameIds(userId);
+      ownedIdsSet = new Set(ownedIds);
+    } catch (e) {
+      console.error('Error al obtener la biblioteca del usuario en enrichGames:', e.message);
+    }
+  }
+
+  // Enriquecer cada juego con precio determinista y propiedad isOwned/inLibrary
+  const enriched = gamesList.map((game) => {
+    const gameWithPrice = priceService.attachPrice(game);
+    const owned = ownedIdsSet.has(Number(gameWithPrice.id || gameWithPrice.id_juego));
+    return {
+      ...gameWithPrice,
+      isOwned: owned,
+      inLibrary: owned
+    };
+  });
+
+  return isArray ? enriched : enriched[0];
+}
 
 // Buscar juegos
 exports.searchGames = async (req, res, next) => {
@@ -12,7 +52,8 @@ exports.searchGames = async (req, res, next) => {
     }
 
     const games = await igdbService.searchGames(q.trim(), parseInt(limit, 10));
-    res.json({ success: true, count: games.length, games });
+    const enrichedGames = await enrichGames(games, req.user?.id_usuario);
+    res.json({ success: true, count: enrichedGames.length, games: enrichedGames });
   } catch (error) {
     next(error);
   }
@@ -23,8 +64,9 @@ exports.getTopRatedGames = async (req, res, next) => {
   try {
     const { limit = 5 } = req.query;
     const games = await igdbService.getTopRatedGames(parseInt(limit, 10));
+    const enrichedGames = await enrichGames(games, req.user?.id_usuario);
 
-    res.json({ success: true, count: games.length, games });
+    res.json({ success: true, count: enrichedGames.length, games: enrichedGames });
   } catch (error) {
     next(error);
   }
@@ -35,8 +77,9 @@ exports.getTrendingGames = async (req, res, next) => {
   try {
     const { limit = 5 } = req.query;
     const games = await igdbService.getTrendingGames(parseInt(limit, 10));
+    const enrichedGames = await enrichGames(games, req.user?.id_usuario);
 
-    res.json({ success: true, count: games.length, games });
+    res.json({ success: true, count: enrichedGames.length, games: enrichedGames });
   } catch (error) {
     next(error);
   }
@@ -57,7 +100,9 @@ exports.getGameById = async (req, res, next) => {
       return res.status(404).json({ error: 'Juego no encontrado' });
     }
 
-    res.json({ success: true, game });
+    const enrichedGame = await enrichGames(game, req.user?.id_usuario);
+
+    res.json({ success: true, game: enrichedGame });
   } catch (error) {
     next(error);
   }
@@ -89,7 +134,7 @@ exports.getAllGames = async (req, res, next) => {
       }
     }
 
-    // Validar año (flexibilidad: si es incompleto o inválido, ignorar en lugar de 400)
+    // Validar año
     let parsedYear = null;
     if (year !== undefined && year !== '' && String(year).trim().length === 4) {
       const tempYear = parseInt(year, 10);
@@ -100,17 +145,18 @@ exports.getAllGames = async (req, res, next) => {
 
     // Consultar juegos con paginación y filtrado por género y año
     const games = await igdbService.getAllGames(parsedLimit, parsedOffset, genreId, parsedYear);
+    const enrichedGames = await enrichGames(games, req.user?.id_usuario);
 
     res.json({
       success: true,
-      count: games.length,
+      count: enrichedGames.length,
       pagination: {
         limit: parsedLimit,
         offset: parsedOffset,
-        nextOffset: parsedOffset + games.length,
+        nextOffset: parsedOffset + enrichedGames.length,
       },
       filters: { genre: genreId, year: parsedYear },
-      games,
+      games: enrichedGames,
     });
   } catch (error) {
     next(error);

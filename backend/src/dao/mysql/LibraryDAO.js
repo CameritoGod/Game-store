@@ -23,6 +23,14 @@ class LibraryDAO extends ILibraryDAO {
     return rows.length > 0;
   }
 
+  async getUserLibraryGameIds(id_usuario) {
+    const [rows] = await pool.query(
+      `SELECT id_juego FROM BIBLIOTECA WHERE id_usuario = ?`,
+      [id_usuario]
+    );
+    return rows.map(r => Number(r.id_juego));
+  }
+
   async addEntry(id_usuario, id_juego, id_compra = null) {
     const [result] = await pool.query(
       `INSERT IGNORE INTO BIBLIOTECA (id_usuario, id_juego, id_compra)

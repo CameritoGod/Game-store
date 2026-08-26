@@ -12,6 +12,25 @@ export const api = axios.create({
   }
 });
 
+// Interceptor para adjuntar automáticamente el token JWT si el usuario está autenticado
+api.interceptors.request.use(
+  (config) => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      try {
+        const { token } = JSON.parse(savedUser);
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (e) {
+        console.error("Error al leer el token en el interceptor de api.js:", e);
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 /**
  * Obtiene los juegos con mayor valoración (tendencias) desde el Backend.
  * @returns {Promise<Array>} Lista de juegos formateados para CardTendencia.
@@ -22,10 +41,13 @@ export const gamesTraiding = async () => {
     const gamesList = response.data.games || [];
     return gamesList.map((game) => ({
       ...game,
-      coverUrl: game.cover || "https://via.placeholder.com/1080x720?text=No+Cover",
+      coverUrl: game.cover || "/nulls/placeholder-game.svg",
       cover: {
-        url: game.cover || "https://via.placeholder.com/1080x720?text=No+Cover"
+        url: game.cover || "/nulls/placeholder-game.svg"
       },
+      price: game.price ? Number(game.price) : (game.precio ? Number(game.precio) : 29.99),
+      isOwned: Boolean(game.isOwned || game.inLibrary),
+      inLibrary: Boolean(game.isOwned || game.inLibrary),
       genres: (game.genres || []).map(g => (typeof g === 'string' ? { name: g } : g))
     }));
   } catch (error) {
@@ -45,10 +67,14 @@ export const gamesRecommendations = async () => {
     return gamesList.map((game) => ({
       id: game.id,
       title: game.name,
-      image: game.cover || "https://via.placeholder.com/264x352?text=No+Cover",
+      image: game.cover || "/nulls/placeholder-game.svg",
       rating: game.rating ? Math.round(game.rating / 20) : 4,
-      price: 59.99,
-      genre: Array.isArray(game.genres) && game.genres.length > 0 ? game.genres[0] : "Acción"
+      price: game.price ? Number(game.price) : (game.precio ? Number(game.precio) : 29.99),
+      isOwned: Boolean(game.isOwned || game.inLibrary),
+      inLibrary: Boolean(game.isOwned || game.inLibrary),
+      genre: Array.isArray(game.genres) && game.genres.length > 0
+        ? (typeof game.genres[0] === 'string' ? game.genres[0] : game.genres[0].name)
+        : "Acción"
     }));
   } catch (error) {
     console.error("Error al obtener recomendaciones:", error);
@@ -66,16 +92,19 @@ export const getAllDiscounts = async () => {
     const gamesList = response.data.games || [];
     return gamesList.map((game, index) => {
       const discount = index === 0 ? 50 : 30;
-      const originalPrice = 59.99;
-      const discountedPrice = (originalPrice * (1 - discount / 100)).toFixed(2);
+      const basePrice = game.precio ? Number(game.precio) : (game.price ? Number(game.price) : 59.99);
+      const discountedPrice = (basePrice * (1 - discount / 100)).toFixed(2);
 
       return {
         id: game.id,
         title: game.name,
-        image: game.cover || "https://via.placeholder.com/264x352?text=No+Cover",
+        image: game.cover || "/nulls/placeholder-game.svg",
         discount: `-${discount}%`,
-        oldPrice: `$${originalPrice}`,
+        oldPrice: `$${basePrice.toFixed(2)}`,
         newPrice: `$${discountedPrice}`,
+        price: Number(discountedPrice),
+        isOwned: Boolean(game.isOwned || game.inLibrary),
+        inLibrary: Boolean(game.isOwned || game.inLibrary),
         description: game.summary ? `${game.summary.substring(0, 100)}...` : "Oferta por tiempo limitado."
       };
     });
@@ -96,10 +125,14 @@ export const getMoreGames = async () => {
     return gamesList.map((game) => ({
       id: game.id,
       title: game.name,
-      image: game.cover || "https://via.placeholder.com/264x352?text=No+Cover",
+      image: game.cover || "/nulls/placeholder-game.svg",
       rating: game.rating ? Math.round(game.rating / 20) : 3,
-      price: 29.99,
-      genre: Array.isArray(game.genres) && game.genres.length > 0 ? game.genres[0] : "Aventura"
+      price: game.price ? Number(game.price) : (game.precio ? Number(game.precio) : 29.99),
+      isOwned: Boolean(game.isOwned || game.inLibrary),
+      inLibrary: Boolean(game.isOwned || game.inLibrary),
+      genre: Array.isArray(game.genres) && game.genres.length > 0
+        ? (typeof game.genres[0] === 'string' ? game.genres[0] : game.genres[0].name)
+        : "Aventura"
     }));
   } catch (error) {
     console.error("Error al obtener catálogo adicional de juegos:", error);
@@ -152,7 +185,10 @@ export const gamesAll = async ({ page = 1, genre = "all", year = "", search = ""
       image: game.cover || "/nulls/placeholder-game.svg",
       rating: game.rating ? Math.round(game.rating / 20) : 4,
       released: game.releaseDate ? String(game.releaseDate) : "2023",
-      genres: game.genres || []
+      genres: game.genres || [],
+      price: game.price ? Number(game.price) : (game.precio ? Number(game.precio) : 29.99),
+      isOwned: Boolean(game.isOwned || game.inLibrary),
+      inLibrary: Boolean(game.isOwned || game.inLibrary)
     }));
 
     return {
@@ -183,12 +219,15 @@ export const getGameById = async (id) => {
 
     return {
       ...game,
-      image: game.cover || "https://via.placeholder.com/1080x720?text=No+Cover",
-      coverUrl: game.cover || "https://via.placeholder.com/1080x720?text=No+Cover",
+      image: game.cover || "/nulls/placeholder-game.svg",
+      coverUrl: game.cover || "/nulls/placeholder-game.svg",
       description: game.summary || "Sin descripción disponible.",
       released: game.releaseDate ? `${game.releaseDate}-01-01` : "2023-01-01",
       genres: game.genres || ["Acción"],
-      screenshots: game.screenshots || []
+      screenshots: game.screenshots || [],
+      price: game.price ? Number(game.price) : (game.precio ? Number(game.precio) : 29.99),
+      isOwned: Boolean(game.isOwned || game.inLibrary),
+      inLibrary: Boolean(game.isOwned || game.inLibrary)
     };
   } catch (error) {
     console.error(`Error al obtener el juego con ID ${id}:`, error);

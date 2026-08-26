@@ -1,12 +1,14 @@
 import { useCart } from "../../../context/CartContext";
 import "./OfferCard.css";
 
-export default function OfferCard({ id, title, image, oldPrice, discount }) {
+export default function OfferCard({ id, title, image, oldPrice, discount, isOwned, inLibrary }) {
   const { addToCart, isInCart } = useCart();
 
+  const isPurchased = Boolean(isOwned || inLibrary);
+
   // Convertimos a número por si acaso vienen como string de la API
-  const price = parseFloat(oldPrice);
-  const percentage = parseInt(discount);
+  const price = parseFloat(String(oldPrice).replace("$", "")) || 59.99;
+  const percentage = parseInt(discount) || 30;
 
   const newPrice = (price - (price * percentage) / 100).toFixed(2);
 
@@ -37,13 +39,19 @@ export default function OfferCard({ id, title, image, oldPrice, discount }) {
           <span className="old-price">${price.toFixed(2)}</span>
           <span className="new-price">${newPrice}</span>
         </div>
-        <button
-          className="btn-offer"
-          disabled={isInCart(id)}
-          onClick={handleAdd}
-        >
-          {isInCart(id) ? "En el carrito" : "Comprar"}
-        </button>
+        {isPurchased ? (
+          <button className="btn-offer disabled" disabled style={{ opacity: 0.85, background: "#2a2a35" }}>
+            <i className="bi bi-check-circle-fill me-1 text-success"></i> En tu biblioteca
+          </button>
+        ) : (
+          <button
+            className="btn-offer"
+            disabled={isInCart(id)}
+            onClick={handleAdd}
+          >
+            {isInCart(id) ? "En el carrito" : "Comprar"}
+          </button>
+        )}
       </div>
     </div>
   );

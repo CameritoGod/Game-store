@@ -10,6 +10,10 @@ class ILibraryDAO {
     throw new Error("Method ownsGame() not implemented");
   }
 
+  async getUserLibraryGameIds(id_usuario) {
+    throw new Error("Method getUserLibraryGameIds() not implemented");
+  }
+
   async addEntry(id_usuario, id_juego, id_compra) {
     throw new Error("Method addEntry() not implemented");
   }

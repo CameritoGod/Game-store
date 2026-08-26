@@ -10,9 +10,13 @@ export default function CartDropdown({ onClose }) {
   const navigate = useNavigate();
   const dropdownRef = useRef();
 
-  // Escuchar clics fuera del dropdown para cerrarlo suavemente
+  // Escuchar clics fuera del dropdown para cerrarlo suavemente (respetando el modal de checkout)
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Ignorar si el modal de checkout está abierto o si el clic se realiza dentro del modal
+      if (openCheckout || event.target.closest('.checkout-overlay') || event.target.closest('.checkout-modal-container')) {
+        return;
+      }
       // Ignorar si se hace clic en el botón activador del carrito en el navbar
       if (event.target.closest('.cart-btn')) return;
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -21,7 +25,7 @@ export default function CartDropdown({ onClose }) {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
+  }, [onClose, openCheckout]);
 
   // Navega al catálogo completo y cierra el dropdown del carrito
   const handleExplore = () => {
