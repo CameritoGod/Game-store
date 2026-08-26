@@ -59,7 +59,7 @@ export default function Navbar({ onToggleSidebar }) {
               </span>
             )}
           </button>
-          {showCart && <CartDropdown />}
+          {showCart && <CartDropdown onClose={() => setShowCart(false)} />}
         </div>
 
         {/* User */}

@@ -28,7 +28,7 @@ export default function UserDashboard() {
     nickname: user?.nickname || "",
     name: user?.name || user?.nombre || "",
     email: user?.email || "",
-    password: "[PASSWORD]"
+    password: ""
   });
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,6 +36,12 @@ export default function UserDashboard() {
   // Carga la lista de juegos favoritos y actualiza la vista previa del avatar al detectar cambios en el usuario
   useEffect(() => {
     if (!user) return;
+    setFormData({
+      nickname: user.nickname || "",
+      name: user.name || user.nombre || "",
+      email: user.email || "",
+      password: ""
+    });
     getFavorites().then(setFavorites).catch(console.error);
     setAvatarPreview(getAvatarUrl(user));
   }, [user]);
@@ -97,15 +103,27 @@ export default function UserDashboard() {
   const handleEditToggle = async () => {
     if (isEditing) {
       try {
-        const res = await updateProfile(user.id || user.id_usuario, {
+        const payload = {
           name: formData.name,
-          nickname: formData.nickname,
-          password: formData.password
-        });
+          nickname: formData.nickname
+        };
+
+        // Solo incluir la contraseña si el usuario escribio una nueva
+        if (formData.password && formData.password.trim() !== "") {
+          if (formData.password.trim().length < 4) {
+            alert("La contraseña debe tener al menos 4 caracteres.");
+            return;
+          }
+          payload.password = formData.password.trim();
+        }
+
+        const res = await updateProfile(user.id || user.id_usuario, payload);
 
         if (res.user) {
           login({ ...user, ...res.user });
         }
+        setFormData(prev => ({ ...prev, password: "" }));
+        setShowPassword(false);
         alert("Perfil actualizado con éxito");
       } catch (error) {
         alert("Error al actualizar: " + error.message);
@@ -232,27 +250,30 @@ export default function UserDashboard() {
                   <input
                     type={showPassword ? "text" : "password"}
                     className="form-control ud-input"
+                    placeholder="Nueva contraseña (opcional)"
                     value={formData.password}
                     disabled={!isEditing}
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    style={{ paddingRight: '45px' }}
+                    style={{ paddingRight: (isEditing && formData.password.length > 0) ? '45px' : undefined }}
                   />
-                  <label>Contraseña</label>
-                  <button
-                    type="button"
-                    className="btn border-0 text-secondary position-absolute top-50 end-0 translate-middle-y me-2"
-                    onClick={(e) => {
-                      // Alterna el estado de visibilidad de la contraseña
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowPassword(prev => !prev);
-                    }}
-                    style={{ zIndex: 10, cursor: 'pointer', background: 'transparent' }}
-                  >
-                    <i className={`bi ${showPassword ? "bi-eye-slash-fill text-warning" : "bi-eye-fill text-light"} fs-5`} />
-                  </button>
+                  <label>Contraseña {isEditing ? "(opcional)" : ""}</label>
+                  {isEditing && formData.password.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn border-0 text-secondary position-absolute top-50 end-0 translate-middle-y me-2"
+                      onClick={(e) => {
+                        // Alterna el estado de visibilidad de la contraseña
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowPassword(prev => !prev);
+                      }}
+                      style={{ zIndex: 10, cursor: 'pointer', background: 'transparent' }}
+                    >
+                      <i className={`bi ${showPassword ? "bi-eye-slash-fill text-warning" : "bi-eye-fill text-light"} fs-5`} />
+                    </button>
+                  )}
                 </div>
 
                 <button

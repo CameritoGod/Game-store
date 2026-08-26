@@ -106,7 +106,7 @@ export default function Footer() {
     <div class="author-card p-3 my-3 text-center rounded-3">
       <i class="bi bi-person-badge-fill text-primary display-4 mb-2 d-block"></i>
       <h5 class="text-white mb-0">Breixon Camero</h5>
-      <small class="text-info">Desarrollador Full Stack Senior</small>
+      <small class="text-info">Desarrollador Full Stack</small>
     </div>
     <div class="contact-links">
       <p class="mb-2"><i class="bi bi-envelope-fill text-warning me-2"></i> <strong class="legal-label">Contacto:</strong> <a href="mailto:breixoncamero29c@gmail.com" class="text-light">breixoncamero29c@gmail.com</a></p>

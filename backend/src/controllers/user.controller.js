@@ -47,10 +47,10 @@ exports.updateProfile = async (req, res, next) => {
       nickname: nickname
     });
 
-    // Si envió nueva contraseña válida
-    if (password && password !== '********' && password.trim().length >= 4) {
+    // Si envió nueva contraseña válida (no vacía ni marcadores de posición)
+    if (password && typeof password === 'string' && password.trim() !== '' && password !== '********' && password !== '[PASSWORD]' && password.trim().length >= 4) {
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
+      const hashedPassword = await bcrypt.hash(password.trim(), salt);
       await userDAO.updatePassword(userId, hashedPassword);
     }
 
