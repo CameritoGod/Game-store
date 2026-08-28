@@ -1,5 +1,6 @@
 import { useState } from "react";
 import authService from "../../../services/authService";
+import { useToast } from "../../../context/useToast";
 import "./forgot.css";
 
 export default function ForgotPasswordModal({ show, onClose }) {
@@ -12,6 +13,7 @@ export default function ForgotPasswordModal({ show, onClose }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { showSuccess, showError, showWarning } = useToast();
 
   if (!show) return null;
 
@@ -24,9 +26,9 @@ export default function ForgotPasswordModal({ show, onClose }) {
       const res = await authService.forgotPassword(email);
       setNickname(res.nickname);
       setStep("confirm");
-      console.log(email);
-    } catch {
-      alert("Correo no registrado");
+      showSuccess("Código de verificación enviado correctamente");
+    } catch (err) {
+      showError(err, "Recuperación de contraseña");
     } finally {
       setLoading(false);
     }
@@ -40,8 +42,9 @@ export default function ForgotPasswordModal({ show, onClose }) {
     try {
       await authService.verifyCode(email, code);
       setStep("reset");
-    } catch {
-      alert("Código inválido o expirado");
+      showSuccess("Código verificado exitosamente");
+    } catch (err) {
+      showError(err, "Código inválido o expirado");
     } finally {
       setLoading(false);
     }
@@ -52,16 +55,16 @@ export default function ForgotPasswordModal({ show, onClose }) {
   // ======================
   const handleResetPassword = async () => {
     if (password !== confirmPassword) {
-      return alert("Las contraseñas no coinciden");
+      return showWarning("Las contraseñas ingresadas no coinciden.");
     }
 
     setLoading(true);
     try {
       await authService.resetPassword(email, password);
-      alert("Contraseña actualizada correctamente");
+      showSuccess("Contraseña actualizada correctamente. Ya puedes iniciar sesión.");
       onClose();
-    } catch {
-      alert("Error al cambiar la contraseña");
+    } catch (err) {
+      showError(err, "Error al cambiar la contraseña");
     } finally {
       setLoading(false);
     }

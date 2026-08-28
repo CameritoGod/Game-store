@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/useAuth";
+import { useToast } from "../../../context/useToast";
 import Navbar from "../../../components/navbar/Navbar";
 import Sidebar from "../../../components/Sidebar/Sidebar";
 import AvatarModal from "../../../components/AvatarModal/AvatarModal";
@@ -12,6 +13,7 @@ import { updateProfile, updateAvatar, getFavorites, deleteFavorite, getLibrary }
 // Componente principal para el panel de control del usuario.
 export default function UserDashboard() {
   const { user, login } = useAuth();
+  const { showSuccess, showError, showWarning } = useToast();
   const navigate = useNavigate();
 
   // Estados locales para favoritos, biblioteca, edición de datos y galería de avatares
@@ -78,10 +80,10 @@ export default function UserDashboard() {
       login(updatedUser);
       setAvatarPreview(newAvatarUrl);
       setIsAvatarModalOpen(false);
-      alert('Avatar actualizado con éxito');
+      showSuccess("¡Foto de perfil y avatar actualizados con éxito!");
     } catch (error) {
-      console.error('Error al actualizar avatar:', error);
-      alert(`Error al actualizar avatar: ${error.message}`);
+      console.error("Error al actualizar avatar:", error);
+      showError(error, "Error al actualizar avatar");
     } finally {
       setSavingAvatar(false);
     }
@@ -99,7 +101,7 @@ export default function UserDashboard() {
         // Solo incluir la contraseña si el usuario escribió una nueva
         if (formData.password && formData.password.trim() !== "") {
           if (formData.password.trim().length < 4) {
-            alert("La contraseña debe tener al menos 4 caracteres.");
+            showWarning("La contraseña debe tener al menos 4 caracteres.");
             return;
           }
           payload.password = formData.password.trim();
@@ -112,9 +114,9 @@ export default function UserDashboard() {
         }
         setFormData(prev => ({ ...prev, password: "" }));
         setShowPassword(false);
-        alert("Perfil actualizado con éxito");
+        showSuccess("Perfil de usuario actualizado correctamente");
       } catch (error) {
-        alert("Error al actualizar: " + error.message);
+        showError(error, "Error al actualizar perfil");
         return;
       }
     }
@@ -126,9 +128,10 @@ export default function UserDashboard() {
     try {
       await deleteFavorite(id_juego);
       setFavorites(prev => prev.filter(game => Number(game.id_juego) !== Number(id_juego)));
+      showSuccess("Juego eliminado de tus favoritos");
     } catch (error) {
       console.error("Error eliminando favorito:", error);
-      alert("No se pudo eliminar el favorito");
+      showError(error, "No se pudo eliminar de favoritos");
     }
   };
 

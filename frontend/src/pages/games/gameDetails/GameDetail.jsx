@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/useAuth.js";
+import { useToast } from "../../../context/useToast.js";
 
 //Componentes
 import Navbar from "../../../components/navbar/Navbar.jsx";
@@ -27,7 +28,8 @@ export default function GameDetail() {
   const { addToCart, isInCart } = useCart();
 
   //Usuario logueado
-  const { user } = useAuth(); 
+  const { user } = useAuth();
+  const { showSuccess, showError, showWarning } = useToast();
 
   //Estados
   const [showFullDesc, setShowFullDesc] = useState(false);
@@ -100,15 +102,15 @@ export default function GameDetail() {
 
   const handleFavoriteToggle = async () => {
     if (!user) {
-      alert("Debes iniciar sesión");
+      showWarning("Debes iniciar sesión para agregar juegos a favoritos", "Sesión requerida");
       return;
     }
 
     try {
       if (isFavorite) {
-        // 👈 AQUÍ VA
         await deleteFavorite(game.id);
         setIsFavorite(false);
+        showSuccess(`"${game.name}" se eliminó de tus favoritos`);
       } else {
         await addFavorite({
           id_juego: game.id,
@@ -116,9 +118,11 @@ export default function GameDetail() {
           imagen_url: game.image
         });
         setIsFavorite(true);
+        showSuccess(`"${game.name}" fue agregado a tus favoritos`);
       }
     } catch (error) {
       console.error("Error al actualizar favorito:", error);
+      showError(error, "Error en Favoritos");
     }
   };
 

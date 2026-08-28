@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../auth/useAuth";
+import { useToast } from "../../../context/useToast";
 import GameAutocomplete from "../../../components/admin/GameAutocomplete";
 import {
   getAdminMetrics,
@@ -33,6 +34,7 @@ function formatDateReadable(dateStr) {
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
+  const { showSuccess, showError, showWarning } = useToast();
 
   const [activeTab, setActiveTab] = useState("metrics");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -101,7 +103,7 @@ export default function AdminDashboard() {
     loadAllData();
   }, []);
 
-  // Actualizar precio de un juego en catálogo
+  // Actualizar precio de juego en catálogo
   const handleUpdatePrice = async (e) => {
     e.preventDefault();
     if (!selectedGameForPrice || !newPrice) return;
@@ -113,12 +115,12 @@ export default function AdminDashboard() {
         precio_actual: parseFloat(newPrice),
         activo: selectedGameForPrice.activo !== false
       });
-      alert("✅ Precio de catálogo actualizado correctamente");
+      showSuccess("Precio de catálogo actualizado correctamente");
       setSelectedGameForPrice(null);
       setNewPrice("");
       loadAllData();
     } catch (error) {
-      alert("❌ Error al actualizar precio: " + error.message);
+      showError(error, "Error al actualizar precio");
     }
   };
 
@@ -130,9 +132,10 @@ export default function AdminDashboard() {
         id_juego: game.id_juego,
         activo: newStatus
       });
+      showSuccess(`Juego "${game.nombre}" marcado como ${newStatus ? 'Activo' : 'Inactivo'}`);
       loadAllData();
     } catch (error) {
-      alert("❌ Error al cambiar estado: " + error.message);
+      showError(error, "Error al cambiar estado");
     }
   };
 
@@ -147,11 +150,11 @@ export default function AdminDashboard() {
         precio_actual: defaultPrice,
         activo: true
       });
-      alert(`✅ ¡Juego "${game.name}" incorporado al catálogo comercial con precio $${defaultPrice.toFixed(2)}!`);
+      showSuccess(`¡Juego "${game.name}" incorporado al catálogo comercial ($${defaultPrice.toFixed(2)})!`);
       setCatalogSelectedGames([]);
       loadAllData();
     } catch (error) {
-      alert("❌ Error al añadir juego al catálogo: " + error.message);
+      showError(error, "Error al añadir juego al catálogo");
     }
   };
 
@@ -164,7 +167,7 @@ export default function AdminDashboard() {
     const end = new Date(discountForm.fecha_fin);
 
     if (end < start) {
-      alert("❌ La fecha de finalización debe ser igual o posterior a la fecha de inicio.");
+      showWarning("La fecha de finalización debe ser igual o posterior a la fecha de inicio.");
       return;
     }
 
@@ -178,7 +181,7 @@ export default function AdminDashboard() {
         games: discountForm.selectedGames,
         gameIds: discountForm.selectedGames.map((g) => (typeof g === "object" ? g.id || g.id_juego : g))
       });
-      alert("✅ Campaña de descuento creada con éxito");
+      showSuccess("Campaña de descuento creada con éxito");
       setDiscountForm({
         nombre: "",
         descripcion: "",
@@ -189,7 +192,7 @@ export default function AdminDashboard() {
       });
       loadAllData();
     } catch (error) {
-      alert("❌ Error al crear descuento: " + (error.response?.data?.message || error.message));
+      showError(error, "Error al crear descuento");
     }
   };
 
@@ -198,10 +201,10 @@ export default function AdminDashboard() {
     if (!window.confirm("¿Seguro que deseas eliminar esta campaña de descuento?")) return;
     try {
       await deleteDiscount(id);
-      alert("✅ Descuento eliminado");
+      showSuccess("Campaña de descuento eliminada");
       loadAllData();
     } catch (error) {
-      alert("❌ Error al eliminar descuento: " + error.message);
+      showError(error, "Error al eliminar descuento");
     }
   };
 

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/useAuth";
+import { useToast } from "../../../context/useToast";
 import authService from "../../../services/authService";
 import logoTitle from "../../../assets/logo/2.png";
 import ForgotPasswordModal from "../Forgot/ForgotPasswordModal";
 import "./login.css";
-
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -16,6 +16,7 @@ export default function Login() {
   const [showForgot, setShowForgot] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { showSuccess, showError } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,16 +26,18 @@ export default function Login() {
         // Registro
         const response = await authService.register(name, nickname, email, password);
         login(response);
+        showSuccess(`¡Bienvenido a GameStore, ${response.nickname || response.nombre}!`, 'Registro Exitoso');
         navigate(response.role === "admin" ? "/admin" : "/user");
       } else {
         // Login
         const response = await authService.login(email, password);
         login(response);
+        showSuccess(`¡Hola de nuevo, ${response.nickname || response.nombre}!`, 'Sesión Iniciada');
         navigate(response.role === "admin" ? "/admin" : "/user");
       }
     } catch (error) {
       console.error("Error de autenticación", error);
-      alert(error.message || "Error al autenticar o registrar");
+      showError(error, isRegister ? "Error en el Registro" : "Error al Iniciar Sesión");
     }
   };
 
