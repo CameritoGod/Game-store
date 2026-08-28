@@ -265,7 +265,7 @@ Game-store/
 
 ## 👨‍💻 Autor
 
-**Cesar Camero (Camero Tech Studio)**  
+**Breixon Camero**  
 *Desarrollador Full-Stack & Diseñador de Soluciones Web*  
 - GitHub: [@CameritoGod](https://github.com/CameritoGod)
 - Proyecto: [Game-store Repository](https://github.com/CameritoGod/Game-store)
