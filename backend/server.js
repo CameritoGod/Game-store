@@ -2,7 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
+const hpp = require('hpp');
 require('dotenv').config();
+
+const sanitizeMiddleware = require('./src/middleware/sanitizeMiddleware');
+const { globalLimiter } = require('./src/middleware/rateLimiterMiddleware');
 
 const gamesRoutes = require('./src/routes/games.routes');
 const authRoutes = require('./src/routes/auth.routes');
@@ -13,10 +17,18 @@ const errorHandler = require('./src/middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middlewares
+// Configuración defensiva de Helmet
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  xssFilter: true,
+  noSniff: true,
+  hidePoweredBy: true
 }));
+
+// Protección contra Polución de Parámetros HTTP (HPP)
+app.use(hpp());
+
+// Configuración de CORS estricto
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
   : '*';
@@ -27,9 +39,16 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Client-ID'],
   credentials: true
 }));
+
 app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Middleware global de desinfección de inputs (XSS & Trim)
+app.use(sanitizeMiddleware);
+
+// Limitador global de peticiones por IP
+app.use('/api/', globalLimiter);
 
 // Logging básico
 app.use((req, res, next) => {
@@ -48,7 +67,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Manejador de errores
+// Manejador de errores global
 app.use(errorHandler);
 
 // Iniciar servidor

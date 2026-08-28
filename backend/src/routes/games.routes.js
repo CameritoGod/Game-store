@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const gamesController = require('../controllers/games.controller');
 const optionalAuth = require('../middleware/optionalAuthMiddleware');
+const { searchLimiter } = require('../middleware/rateLimiterMiddleware');
 
-// Búsqueda
-router.get('/search', optionalAuth, gamesController.searchGames);
+// Búsqueda (con limitador de ráfagas para autocompletado y scraping)
+router.get('/search', searchLimiter, optionalAuth, gamesController.searchGames);
 
 // Juegos mejor valorados
 router.get('/top-rated', optionalAuth, gamesController.getTopRatedGames);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../auth/useAuth";
 import { useToast } from "../../../context/useToast";
+import { sanitizeInput } from "../../../utils/sanitizer";
 import GameAutocomplete from "../../../components/admin/GameAutocomplete";
 import {
   getAdminMetrics,
@@ -103,16 +104,26 @@ export default function AdminDashboard() {
     loadAllData();
   }, []);
 
+  const [isSubmittingAdmin, setIsSubmittingAdmin] = useState(false);
+
   // Actualizar precio de juego en catálogo
   const handleUpdatePrice = async (e) => {
     e.preventDefault();
-    if (!selectedGameForPrice || !newPrice) return;
+    if (!selectedGameForPrice || !newPrice || isSubmittingAdmin) return;
+
+    const parsedPrice = parseFloat(newPrice);
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      showWarning("Ingresa un precio numérico válido igual o mayor a 0.");
+      return;
+    }
+
+    setIsSubmittingAdmin(true);
     try {
       await setCatalogPrice({
         id_juego: selectedGameForPrice.id_juego,
-        nombre: selectedGameForPrice.nombre,
+        nombre: sanitizeInput(selectedGameForPrice.nombre),
         imagen_url: selectedGameForPrice.imagen_url,
-        precio_actual: parseFloat(newPrice),
+        precio_actual: parsedPrice,
         activo: selectedGameForPrice.activo !== false
       });
       showSuccess("Precio de catálogo actualizado correctamente");
@@ -121,11 +132,15 @@ export default function AdminDashboard() {
       loadAllData();
     } catch (error) {
       showError(error, "Error al actualizar precio");
+    } finally {
+      setIsSubmittingAdmin(false);
     }
   };
 
   // Alternar estado Activo / Inactivo en catálogo
   const handleToggleCatalogStatus = async (game) => {
+    if (isSubmittingAdmin) return;
+    setIsSubmittingAdmin(true);
     try {
       const newStatus = !game.activo;
       await toggleCatalogStatus({
@@ -136,16 +151,20 @@ export default function AdminDashboard() {
       loadAllData();
     } catch (error) {
       showError(error, "Error al cambiar estado");
+    } finally {
+      setIsSubmittingAdmin(false);
     }
   };
 
   // Agregar juego nuevo al catálogo comercial desde autocompletado
   const handleAddGameToCatalog = async (game) => {
+    if (isSubmittingAdmin) return;
+    setIsSubmittingAdmin(true);
     try {
       const defaultPrice = game.price ? parseFloat(game.price) : 29.99;
       await setCatalogPrice({
         id_juego: game.id,
-        nombre: game.name,
+        nombre: sanitizeInput(game.name),
         imagen_url: game.cover,
         precio_actual: defaultPrice,
         activo: true
@@ -155,13 +174,15 @@ export default function AdminDashboard() {
       loadAllData();
     } catch (error) {
       showError(error, "Error al añadir juego al catálogo");
+    } finally {
+      setIsSubmittingAdmin(false);
     }
   };
 
   // Crear campaña de descuento
   const handleCreateDiscount = async (e) => {
     e.preventDefault();
-    if (!discountForm.nombre || !discountForm.porcentaje) return;
+    if (!discountForm.nombre || !discountForm.porcentaje || isSubmittingAdmin) return;
 
     const start = new Date(discountForm.fecha_inicio);
     const end = new Date(discountForm.fecha_fin);
@@ -171,10 +192,11 @@ export default function AdminDashboard() {
       return;
     }
 
+    setIsSubmittingAdmin(true);
     try {
       await addDiscount({
-        nombre: discountForm.nombre,
-        descripcion: discountForm.descripcion,
+        nombre: sanitizeInput(discountForm.nombre),
+        descripcion: sanitizeInput(discountForm.descripcion),
         porcentaje: parseFloat(discountForm.porcentaje),
         fecha_inicio: discountForm.fecha_inicio,
         fecha_fin: discountForm.fecha_fin,
@@ -193,6 +215,8 @@ export default function AdminDashboard() {
       loadAllData();
     } catch (error) {
       showError(error, "Error al crear descuento");
+    } finally {
+      setIsSubmittingAdmin(false);
     }
   };
 

@@ -2,9 +2,8 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const authMiddleware = require('../middleware/authMiddleware');
-const roleMiddleware = require('../middleware/roleMiddleware');
-
 const roleAdmin = require('../middleware/roleMiddleware');
+const { validateCatalogPrice, validateDiscount } = require('../middleware/validatorMiddleware');
 
 // Aplicar authMiddleware y roleMiddleware a todas las rutas de admin
 router.use(authMiddleware);
@@ -16,12 +15,12 @@ router.get('/purchases', adminController.getAllPurchases);
 
 // Catálogo y Precios
 router.get('/catalog', adminController.getCatalog);
-router.post('/catalog/price', adminController.setCatalogPrice);
+router.post('/catalog/price', validateCatalogPrice, adminController.setCatalogPrice);
 router.put('/catalog/toggle', adminController.toggleCatalogStatus);
 
 // Campañas de Descuento
 router.get('/discounts', adminController.getDiscounts);
-router.post('/discounts', adminController.createDiscount);
+router.post('/discounts', validateDiscount, adminController.createDiscount);
 router.delete('/discounts/:id', adminController.deleteDiscount);
 
 module.exports = router;

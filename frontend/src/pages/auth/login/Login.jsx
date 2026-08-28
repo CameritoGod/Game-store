@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/useAuth";
 import { useToast } from "../../../context/useToast";
+import { sanitizeInput } from "../../../utils/sanitizer";
 import authService from "../../../services/authService";
 import logoTitle from "../../../assets/logo/2.png";
 import ForgotPasswordModal from "../Forgot/ForgotPasswordModal";
@@ -14,23 +15,32 @@ export default function Login() {
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState("");
   const [showForgot, setShowForgot] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    const cleanEmail = sanitizeInput(email);
+    const cleanName = sanitizeInput(name);
+    const cleanNickname = sanitizeInput(nickname);
+    const cleanPassword = password.trim();
 
     try {
       if (isRegister) {
         // Registro
-        const response = await authService.register(name, nickname, email, password);
+        const response = await authService.register(cleanName, cleanNickname, cleanEmail, cleanPassword);
         login(response);
         showSuccess(`¡Bienvenido a GameStore, ${response.nickname || response.nombre}!`, 'Registro Exitoso');
         navigate(response.role === "admin" ? "/admin" : "/user");
       } else {
         // Login
-        const response = await authService.login(email, password);
+        const response = await authService.login(cleanEmail, cleanPassword);
         login(response);
         showSuccess(`¡Hola de nuevo, ${response.nickname || response.nombre}!`, 'Sesión Iniciada');
         navigate(response.role === "admin" ? "/admin" : "/user");
@@ -38,6 +48,8 @@ export default function Login() {
     } catch (error) {
       console.error("Error de autenticación", error);
       showError(error, isRegister ? "Error en el Registro" : "Error al Iniciar Sesión");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -136,8 +148,15 @@ export default function Login() {
         </label>
       </div>
 
-      <button type="submit" className="btn btn-primary w-100 py-2">
-        {isRegister ? "Registrarse" : "Entrar"}
+      <button type="submit" className="btn btn-primary w-100 py-2" disabled={isSubmitting}>
+        {isSubmitting ? (
+          <>
+            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Procesando...
+          </>
+        ) : (
+          isRegister ? "Registrarse" : "Entrar"
+        )}
       </button>
     </form>
 

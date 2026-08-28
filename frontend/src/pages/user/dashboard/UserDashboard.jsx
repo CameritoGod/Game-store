@@ -6,6 +6,7 @@ import Navbar from "../../../components/navbar/Navbar";
 import Sidebar from "../../../components/Sidebar/Sidebar";
 import AvatarModal from "../../../components/AvatarModal/AvatarModal";
 import { getAvatarUrl, generateSVGPlaceholder } from "../../../utils/avatarUtils";
+import { sanitizeInput } from "../../../utils/sanitizer";
 import "./UserDashboard.css";
 
 import { updateProfile, updateAvatar, getFavorites, deleteFavorite, getLibrary } from "../../../api/userApi";
@@ -89,19 +90,25 @@ export default function UserDashboard() {
     }
   };
 
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
+
   // Alterna entre el modo de edición y lectura. Si se está editando, guarda los cambios en el servidor
   const handleEditToggle = async () => {
     if (isEditing) {
+      if (isSubmittingProfile) return;
+      setIsSubmittingProfile(true);
+
       try {
         const payload = {
-          name: formData.name,
-          nickname: formData.nickname
+          name: sanitizeInput(formData.name),
+          nickname: sanitizeInput(formData.nickname)
         };
 
         // Solo incluir la contraseña si el usuario escribió una nueva
         if (formData.password && formData.password.trim() !== "") {
           if (formData.password.trim().length < 4) {
             showWarning("La contraseña debe tener al menos 4 caracteres.");
+            setIsSubmittingProfile(false);
             return;
           }
           payload.password = formData.password.trim();
@@ -117,7 +124,10 @@ export default function UserDashboard() {
         showSuccess("Perfil de usuario actualizado correctamente");
       } catch (error) {
         showError(error, "Error al actualizar perfil");
+        setIsSubmittingProfile(false);
         return;
+      } finally {
+        setIsSubmittingProfile(false);
       }
     }
     setIsEditing(!isEditing);

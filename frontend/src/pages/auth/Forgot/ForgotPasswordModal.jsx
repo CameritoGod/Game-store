@@ -1,6 +1,7 @@
 import { useState } from "react";
 import authService from "../../../services/authService";
 import { useToast } from "../../../context/useToast";
+import { sanitizeInput } from "../../../utils/sanitizer";
 import "./forgot.css";
 
 export default function ForgotPasswordModal({ show, onClose }) {
@@ -21,9 +22,16 @@ export default function ForgotPasswordModal({ show, onClose }) {
   // PEDIR CÓDIGO
   // ======================
   const handleEmailSubmit = async () => {
+    if (loading) return;
+    const cleanEmail = sanitizeInput(email);
+    if (!cleanEmail) {
+      showWarning("Por favor ingresa un correo válido.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await authService.forgotPassword(email);
+      const res = await authService.forgotPassword(cleanEmail);
       setNickname(res.nickname);
       setStep("confirm");
       showSuccess("Código de verificación enviado correctamente");
@@ -38,9 +46,18 @@ export default function ForgotPasswordModal({ show, onClose }) {
   // VERIFICAR CÓDIGO
   // ======================
   const handleVerifyCode = async () => {
+    if (loading) return;
+    const cleanEmail = sanitizeInput(email);
+    const cleanCode = sanitizeInput(code);
+
+    if (!cleanCode) {
+      showWarning("Por favor ingresa el código de verificación.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await authService.verifyCode(email, code);
+      await authService.verifyCode(cleanEmail, cleanCode);
       setStep("reset");
       showSuccess("Código verificado exitosamente");
     } catch (err) {
@@ -54,13 +71,21 @@ export default function ForgotPasswordModal({ show, onClose }) {
   // CAMBIAR CONTRASEÑA
   // ======================
   const handleResetPassword = async () => {
-    if (password !== confirmPassword) {
+    if (loading) return;
+    const cleanEmail = sanitizeInput(email);
+    const cleanPassword = password.trim();
+    const cleanConfirm = confirmPassword.trim();
+
+    if (cleanPassword !== cleanConfirm) {
       return showWarning("Las contraseñas ingresadas no coinciden.");
+    }
+    if (cleanPassword.length < 4) {
+      return showWarning("La contraseña debe tener al menos 4 caracteres.");
     }
 
     setLoading(true);
     try {
-      await authService.resetPassword(email, password);
+      await authService.resetPassword(cleanEmail, cleanPassword);
       showSuccess("Contraseña actualizada correctamente. Ya puedes iniciar sesión.");
       onClose();
     } catch (err) {
