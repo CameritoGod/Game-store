@@ -93,8 +93,8 @@ export default function AdminDashboard() {
       setPurchases(p);
       setCatalog(c);
       setDiscounts(d);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // Manejo silencioso de errores de carga inicial en dashboard
     } finally {
       setLoading(false);
     }

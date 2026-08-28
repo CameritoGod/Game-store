@@ -2,12 +2,18 @@ const IPurchaseDAO = require('../../interfaces/IPurchaseDAO');
 const pool = require('../../config/db');
 const GameReferenceDAO = require('./GameReferenceDAO');
 
+/**
+ * Data Access Object para gestión de órdenes de compra, transacciones SQL y métricas comerciales.
+ */
 class PurchaseDAO extends IPurchaseDAO {
   constructor() {
     super();
     this.gameRefDAO = new GameReferenceDAO();
   }
 
+  /**
+   * Ejecuta la transacción atómica de compra: calcula descuentos, registra orden y agrega a biblioteca.
+   */
   async processCheckout(id_usuario, items) {
     if (!items || items.length === 0) {
       throw new Error("El carrito de compras está vacío");
@@ -27,7 +33,7 @@ class PurchaseDAO extends IPurchaseDAO {
         const imagen_url = item.cover || item.imagen_url || null;
         const precio_unitario = parseFloat(item.price || item.precio || 0);
 
-        // 1. Asegurar existencia de la referencia del juego
+        // 1. Asegurar persistencia de metadatos en JUEGOS_REFERENCIA
         await connection.query(
           `INSERT INTO JUEGOS_REFERENCIA (id_juego, nombre, imagen_url)
            VALUES (?, ?, ?)
@@ -37,7 +43,7 @@ class PurchaseDAO extends IPurchaseDAO {
           [id_juego, nombre, imagen_url]
         );
 
-        // 2. Buscar si hay descuento activo para el juego
+        // 2. Comprobar si existe promoción activa para el juego
         const [discRows] = await connection.query(
           `SELECT d.porcentaje
            FROM DESCUENTOS d
@@ -66,7 +72,7 @@ class PurchaseDAO extends IPurchaseDAO {
 
       const total = Math.max(0, subtotal - descuento_total);
 
-      // 3. Insertar la cabecera de la compra
+      // 3. Registrar cabecera de orden en COMPRAS
       const [compraResult] = await connection.query(
         `INSERT INTO COMPRAS (id_usuario, subtotal, descuento_total, total)
          VALUES (?, ?, ?, ?)`,
@@ -74,7 +80,7 @@ class PurchaseDAO extends IPurchaseDAO {
       );
       const id_compra = compraResult.insertId;
 
-      // 4. Insertar los detalles de compra y agregar a BIBLIOTECA
+      // 4. Registrar partidas en DETALLE_COMPRAS y asignar a BIBLIOTECA
       for (const detail of detailItems) {
         await connection.query(
           `INSERT INTO DETALLE_COMPRAS (id_compra, id_juego, precio_unitario, descuento_aplicado, precio_final)
@@ -108,6 +114,9 @@ class PurchaseDAO extends IPurchaseDAO {
     }
   }
 
+  /**
+   * Consulta el historial de compras de un usuario agrupado por orden.
+   */
   async getUserPurchases(id_usuario) {
     const [rows] = await pool.query(
       `SELECT c.id_compra, c.fecha_compra, c.subtotal, c.descuento_total, c.total,
@@ -121,7 +130,6 @@ class PurchaseDAO extends IPurchaseDAO {
       [id_usuario]
     );
 
-    // Agrupar compras por id_compra
     const purchasesMap = new Map();
     for (const r of rows) {
       if (!purchasesMap.has(r.id_compra)) {
@@ -148,6 +156,9 @@ class PurchaseDAO extends IPurchaseDAO {
     return Array.from(purchasesMap.values());
   }
 
+  /**
+   * Consulta el historial global de compras con información de usuarios para el panel de administración.
+   */
   async getAllPurchases() {
     const [rows] = await pool.query(
       `SELECT c.id_compra, c.fecha_compra, c.subtotal, c.descuento_total, c.total,
@@ -193,6 +204,9 @@ class PurchaseDAO extends IPurchaseDAO {
     return Array.from(purchasesMap.values());
   }
 
+  /**
+   * Agrega estadísticas financieras y métricas de desempeño de la plataforma.
+   */
   async getAdminMetrics() {
     const [[rev]] = await pool.query(`SELECT COALESCE(SUM(total), 0) AS total_revenue FROM COMPRAS`);
     const [[sales]] = await pool.query(`SELECT COUNT(*) AS total_sales FROM COMPRAS`);

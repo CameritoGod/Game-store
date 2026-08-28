@@ -3,12 +3,15 @@ import axios from "axios";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 const API_URL = `${API_BASE_URL}/auth`;
 
+/**
+ * Normaliza la URL del avatar del usuario asignando un fallback de DiceBear si no existe.
+ */
 const formatAvatarUrl = (avatar) => {
   if (!avatar) return 'https://api.dicebear.com/9.x/bottts/svg?seed=Felix';
-  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image')) return avatar;
   return avatar;
 };
 
+// Instancia configurada de Axios para peticiones de autenticación
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -16,6 +19,7 @@ const api = axios.create({
   }
 });
 
+// Interceptor para adjuntar automáticamente el token JWT en las cabeceras
 api.interceptors.request.use((config) => {
   const savedUser = localStorage.getItem("user");
   if (savedUser) {
@@ -24,30 +28,35 @@ api.interceptors.request.use((config) => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-    } catch (e) {
-      console.error("Error parsing user from localStorage:", e);
+    } catch {
+      // Si el formato en storage está corrupto, se omite el token
     }
   }
   return config;
 });
 
 const authService = {
+  /**
+   * Inicia sesión con credenciales de usuario y formatea la respuesta con token.
+   */
   async login(email, password) {
     try {
       const res = await api.post(`${API_URL}/login`, { email, password });
-      const userData = {
+      return {
         ...res.data.user,
         avatar: formatAvatarUrl(res.data.user.avatar || res.data.user.avatar_url),
         avatar_url: formatAvatarUrl(res.data.user.avatar_url || res.data.user.avatar),
         token: res.data.token
       };
-      return userData;
     } catch (error) {
       const msg = error.response?.data?.message || "Error al iniciar sesión";
       throw new Error(msg);
     }
   },
 
+  /**
+   * Registra una nueva cuenta de usuario en la plataforma.
+   */
   async register(nombre, nickname, email, password, rol) {
     try {
       const res = await api.post(`${API_URL}/register`, {
@@ -57,19 +66,21 @@ const authService = {
         password,
         rol: rol || "cliente"
       });
-      const userData = {
+      return {
         ...res.data.user,
         avatar: formatAvatarUrl(res.data.user.avatar || res.data.user.avatar_url),
         avatar_url: formatAvatarUrl(res.data.user.avatar_url || res.data.user.avatar),
         token: res.data.token
       };
-      return userData;
     } catch (error) {
       const msg = error.response?.data?.message || "Error al registrarse";
       throw new Error(msg);
     }
   },
 
+  /**
+   * Solicita el envío de un código OTP de recuperación al correo especificado.
+   */
   async forgotPassword(email) {
     try {
       const res = await axios.post(`${API_URL}/forgot-password`, { email }, {
@@ -82,6 +93,9 @@ const authService = {
     }
   },
 
+  /**
+   * Verifica la validez y vigencia del código OTP de 6 dígitos.
+   */
   async verifyCode(email, code) {
     try {
       const res = await axios.post(`${API_URL}/verify-code`, { email, code }, {
@@ -94,6 +108,9 @@ const authService = {
     }
   },
 
+  /**
+   * Restablece la contraseña del usuario validando el código de seguridad.
+   */
   async resetPassword(email, code, password) {
     try {
       const res = await axios.post(`${API_URL}/reset-password`, { email, code, password }, {

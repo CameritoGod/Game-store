@@ -17,7 +17,7 @@ const errorHandler = require('./src/middleware/errorHandler');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Configuración defensiva de Helmet
+// Configuración defensiva de cabeceras HTTP con Helmet
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   xssFilter: true,
@@ -28,16 +28,33 @@ app.use(helmet({
 // Protección contra Polución de Parámetros HTTP (HPP)
 app.use(hpp());
 
-// Configuración de CORS estricto
-const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
-  : '*';
+// Configuración dinámica de CORS para desarrollo y producción
+const rawOrigins = process.env.FRONTEND_URL || process.env.CLIENT_URL || '';
+const configuredOrigins = rawOrigins
+  ? rawOrigins.split(',').map(url => url.trim().replace(/\/$/, '')).filter(Boolean)
+  : [];
+
+const defaultDevOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+
+const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : defaultDevOrigins;
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Permitir peticiones sin origen (móviles/Postman/curl) o que coincidan con orígenes autorizados
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    return callback(new Error('Acceso no permitido por política de CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Client-ID'],
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 app.use(compression());
@@ -50,31 +67,21 @@ app.use(sanitizeMiddleware);
 // Limitador global de peticiones por IP
 app.use('/api/', globalLimiter);
 
-// Logging básico
-app.use((req, res, next) => {
-  console.log(`📡 ${req.method} ${req.url}`);
-  next();
-});
-
-// Rutas
+// Rutas de la API
 app.use('/api/games', gamesRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Ruta de salud
+// Endpoint de verificación de salud del servidor
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Manejador de errores global
+// Manejador centralizado de errores
 app.use(errorHandler);
 
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📋 Endpoints disponibles:`);
-  console.log(`   GET  /api/games/search?q=zelda&limit=20`);
-  console.log(`   GET  /api/games/:id`);
-  console.log(`   GET  /api/health`);
 });

@@ -5,7 +5,7 @@ import CheckoutModal from "../checkoutModal/CheckoutModal.jsx";
 import "./CartDropdown.css";
 
 export default function CartDropdown({ onClose }) {
-  const { cartItems, removeFromCart, totalPrice } = useCart();
+  const { cartItems, removeFromCart, subtotal, totalDiscount, totalPrice } = useCart();
   const [openCheckout, setOpenCheckout] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef();
@@ -77,6 +77,8 @@ export default function CartDropdown({ onClose }) {
             <div className="cart-items-list">
               {cartItems.map((item) => {
                 const imgSrc = item.image || item.cover || item.imagen_url || "/nulls/placeholder-game.svg";
+                const isDiscounted = item.hasDiscount || (item.originalPrice && item.originalPrice > item.price);
+
                 return (
                   <div key={item.id} className="cart-item-card">
                     <img
@@ -94,7 +96,18 @@ export default function CartDropdown({ onClose }) {
                       </span>
                       <div className="cart-item-meta">
                         <span className="badge-key">Clave Digital</span>
-                        <span className="cart-item-price">${Number(item.price).toFixed(2)}</span>
+                        {isDiscounted ? (
+                          <div className="d-flex align-items-center gap-1">
+                            <span className="text-muted text-decoration-line-through small" style={{ fontSize: '0.78rem' }}>
+                              ${Number(item.originalPrice).toFixed(2)}
+                            </span>
+                            <span className="cart-item-price text-success fw-bold">
+                              ${Number(item.price).toFixed(2)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="cart-item-price">${Number(item.price).toFixed(2)}</span>
+                        )}
                       </div>
                     </div>
                     <button
@@ -122,11 +135,11 @@ export default function CartDropdown({ onClose }) {
             <div className="cart-summary-footer">
               <div className="cart-summary-row">
                 <span className="text-muted small">Subtotal</span>
-                <span className="text-white small fw-bold">${totalPrice.toFixed(2)}</span>
+                <span className="text-white small fw-bold">${subtotal.toFixed(2)}</span>
               </div>
               <div className="cart-summary-row">
                 <span className="text-muted small">Descuentos</span>
-                <span className="text-success-neon small fw-bold">-$0.00</span>
+                <span className="text-success-neon small fw-bold">-${totalDiscount.toFixed(2)}</span>
               </div>
               <div className="cart-summary-row total-row">
                 <span className="total-label">Total a Pagar</span>

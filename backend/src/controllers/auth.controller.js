@@ -7,6 +7,9 @@ const emailService = require('../services/emailService');
 const userDAO = new UserDAO();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key_gamestore_2026';
 
+/**
+ * Genera un token JWT firmado con los datos de rol e identidad del usuario.
+ */
 const generateToken = (user) => {
   return jwt.sign(
     {
@@ -21,11 +24,17 @@ const generateToken = (user) => {
   );
 };
 
+/**
+ * Retorna URL de avatar DiceBear predeterminado para el usuario.
+ */
 const getDefaultAvatar = (user) => {
   const seed = user?.nickname || user?.nombre || 'User';
   return `https://api.dicebear.com/9.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
 };
 
+/**
+ * Registra un nuevo usuario con contraseña hasheada y asignación de rol.
+ */
 exports.register = async (req, res, next) => {
   try {
     const { nombre, nickname, email, password, rol } = req.body;
@@ -47,7 +56,6 @@ exports.register = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Asignar rol: 1 para admin si se especifica "admin", 2 para cliente
     const id_rol = rol === 'admin' ? 1 : 2;
 
     const newUser = await userDAO.create({
@@ -81,6 +89,9 @@ exports.register = async (req, res, next) => {
   }
 };
 
+/**
+ * Autentica al usuario validando correo y contraseña con bcrypt.
+ */
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -122,6 +133,9 @@ exports.login = async (req, res, next) => {
   }
 };
 
+/**
+ * Genera código OTP de 6 dígitos con hash SHA-256 y lo envía por correo electrónico.
+ */
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -132,18 +146,15 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(404).json({ message: 'No encontramos ninguna cuenta asociada a este correo electrónico.' });
     }
 
-    // Generar código OTP criptográficamente seguro de 6 dígitos
     const code = crypto.randomInt(100000, 999999).toString();
     const tokenHash = crypto.createHash('sha256').update(code).digest('hex');
-    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos de validez
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
 
     await userDAO.setResetToken(cleanEmail, tokenHash, expires);
 
-    // Enviar correo electrónico vía Nodemailer Gmail
     try {
       await emailService.sendPasswordResetEmail(cleanEmail, code, user.nickname || user.nombre);
-    } catch (mailError) {
-      console.error('❌ Error al enviar correo de recuperación con Nodemailer:', mailError);
+    } catch {
       return res.status(500).json({ message: 'Error al enviar el correo de recuperación. Revisa la configuración del servidor.' });
     }
 
@@ -157,6 +168,9 @@ exports.forgotPassword = async (req, res, next) => {
   }
 };
 
+/**
+ * Valida si el código OTP suministrado coincide y está vigente.
+ */
 exports.verifyCode = async (req, res, next) => {
   try {
     const { email, code } = req.body;
@@ -179,13 +193,15 @@ exports.verifyCode = async (req, res, next) => {
   }
 };
 
+/**
+ * Actualiza la contraseña del usuario tras validar el código OTP.
+ */
 exports.resetPassword = async (req, res, next) => {
   try {
     const { email, code, password } = req.body;
     const cleanEmail = email.trim();
     const cleanCode = code.trim();
 
-    // Validar código OTP y vigencia antes de permitir el cambio
     const tokenHash = crypto.createHash('sha256').update(cleanCode).digest('hex');
     const user = await userDAO.verifyResetCode(cleanEmail, tokenHash);
 

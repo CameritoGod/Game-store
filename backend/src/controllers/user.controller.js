@@ -9,11 +9,17 @@ const favoriteDAO = new FavoriteDAO();
 const libraryDAO = new LibraryDAO();
 const purchaseDAO = new PurchaseDAO();
 
+/**
+ * Retorna URL predeterminada de DiceBear si el usuario no tiene avatar configurado.
+ */
 const getDefaultAvatar = (user) => {
   const seed = user?.nickname || user?.nombre || 'User';
   return `https://api.dicebear.com/9.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
 };
 
+/**
+ * Obtiene la información del perfil del usuario autenticado.
+ */
 exports.getProfile = async (req, res, next) => {
   try {
     const user = await userDAO.findById(req.user.id_usuario);
@@ -38,12 +44,15 @@ exports.getProfile = async (req, res, next) => {
   }
 };
 
+/**
+ * Actualiza los datos del perfil (nombre, nickname y/o contraseña con hashing seguro).
+ */
 exports.updateProfile = async (req, res, next) => {
   try {
     const parsedId = req.params.id ? parseInt(req.params.id, 10) : NaN;
     const userId = !Number.isNaN(parsedId) ? parsedId : req.user.id_usuario;
 
-    // Solo el usuario dueño de la cuenta o un admin puede editar
+    // Solo el dueño de la cuenta o un administrador pueden editar
     if (req.user.id_usuario !== userId && req.user.rol !== 'admin') {
       return res.status(403).json({ message: 'No tiene permiso para modificar este perfil' });
     }
@@ -56,7 +65,6 @@ exports.updateProfile = async (req, res, next) => {
       nickname: nickname
     });
 
-    // Si envió nueva contraseña válida
     if (password && typeof password === 'string' && password.trim() !== '' && password !== '********' && password !== '[PASSWORD]' && password.trim().length >= 4) {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password.trim(), salt);
@@ -85,6 +93,9 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
+/**
+ * Actualiza la URL del avatar del usuario autenticado.
+ */
 exports.updateAvatar = async (req, res, next) => {
   try {
     const { avatar_url } = req.body;
@@ -116,7 +127,9 @@ exports.updateAvatar = async (req, res, next) => {
   }
 };
 
-// FAVORITOS
+/**
+ * Obtiene la lista de juegos agregados a favoritos por el usuario.
+ */
 exports.getFavorites = async (req, res, next) => {
   try {
     const favorites = await favoriteDAO.getUserFavorites(req.user.id_usuario);
@@ -126,6 +139,9 @@ exports.getFavorites = async (req, res, next) => {
   }
 };
 
+/**
+ * Agrega un juego a la lista de favoritos del usuario.
+ */
 exports.addFavorite = async (req, res, next) => {
   try {
     const { id_juego, nombre, imagen_url } = req.body;
@@ -145,6 +161,9 @@ exports.addFavorite = async (req, res, next) => {
   }
 };
 
+/**
+ * Elimina un juego de la lista de favoritos.
+ */
 exports.deleteFavorite = async (req, res, next) => {
   try {
     const gameId = parseInt(req.params.gameId, 10);
@@ -155,7 +174,9 @@ exports.deleteFavorite = async (req, res, next) => {
   }
 };
 
-// BIBLIOTECA
+/**
+ * Consulta los juegos adquiridos presentes en la biblioteca personal.
+ */
 exports.getLibrary = async (req, res, next) => {
   try {
     const library = await libraryDAO.getUserLibrary(req.user.id_usuario);
@@ -165,7 +186,9 @@ exports.getLibrary = async (req, res, next) => {
   }
 };
 
-// COMPRAS / CHECKOUT
+/**
+ * Consulta el historial de compras y transacciones del usuario.
+ */
 exports.getPurchases = async (req, res, next) => {
   try {
     const purchases = await purchaseDAO.getUserPurchases(req.user.id_usuario);
@@ -175,6 +198,9 @@ exports.getPurchases = async (req, res, next) => {
   }
 };
 
+/**
+ * Procesa la orden de compra e inserta los juegos en la biblioteca del usuario.
+ */
 exports.checkout = async (req, res, next) => {
   try {
     const { items } = req.body;

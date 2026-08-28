@@ -128,8 +128,7 @@ export default function CheckoutModal({ open, onClose, total }) {
       setTxnId(generatedTxn);
       setSuccess(true);
       clearCart();
-    } catch (err) {
-      console.error("Error procesando compra:", err);
+    } catch {
       setError("Ocurrió un error al registrar la compra. Intenta de nuevo.");
     } finally {
       setLoading(false);

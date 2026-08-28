@@ -212,6 +212,14 @@
   margin: 0 auto;
 }
 
+/* SPAM NOTICE */
+.fp-spam-notice {
+  background: rgba(56, 189, 248, 0.04);
+  border: 1px solid rgba(56, 189, 248, 0.12);
+  border-radius: 10px;
+  text-align: left;
+}
+
 /* EYE TOGGLE */
 .fp-eye-toggle {
   position: absolute;

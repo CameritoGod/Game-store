@@ -15,8 +15,9 @@ export default function PurchaseHistory() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Cargar historial de compras del usuario autenticado
   useEffect(() => {
-    getPurchases().then(setPurchases).catch(console.error);
+    getPurchases().then(setPurchases).catch(() => setPurchases([]));
   }, []);
 
   const filterByDate = (dateStr) => {

@@ -90,9 +90,8 @@ export default function GameDetail() {
         // LIBRERÍA / COMPRAS
         const purchases = await getPurchases();
         setIsOwned(purchases.some(p => p.id_juego === game.id));
-      
-      } catch (err) {
-        console.error("Error comprobando estado del juego", err);
+      } catch {
+        // Fallo silencioso en verificación de estado de usuario
       }
     };
   
@@ -121,7 +120,6 @@ export default function GameDetail() {
         showSuccess(`"${game.name}" fue agregado a tus favoritos`);
       }
     } catch (error) {
-      console.error("Error al actualizar favorito:", error);
       showError(error, "Error en Favoritos");
     }
   };
@@ -252,9 +250,16 @@ export default function GameDetail() {
                     onClick={() => {
                       addToCart({
                         id: game.id,
+                        id_juego: game.id,
                         title: game.name,
+                        name: game.name,
                         image: game.image,
-                        price
+                        price: game.price,
+                        oldPrice: game.oldPrice,
+                        precio_original: game.precio_original,
+                        discount: game.discount,
+                        porcentaje_descuento: game.porcentaje_descuento,
+                        hasDiscount: game.hasDiscount
                       });
                     }}
                   >

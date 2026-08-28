@@ -109,8 +109,7 @@ export default function AllGames() {
           setGames([]);
           setTotalGames(0);
         }
-      } catch (error) {
-        console.error("Error cargando juegos:", error);
+      } catch {
         setGames([]);
         setTotalGames(0);
       } finally {
@@ -208,12 +207,19 @@ export default function AllGames() {
                 <div key={game.id} className="col-12 col-md-4 col-lg-3">
                   <CardGame
                     id={game.id}
-                    title={game.name}
+                    id_juego={game.id}
+                    title={game.name || game.title}
+                    name={game.name || game.title}
                     image={game.image}
                     rating={game.rating}
                     year={game.released?.split("-")[0] || "N/A"}
-                    genre={game.genres?.[0] || "Unknown"}
-                    price={game.price ? Number(game.price).toFixed(2) : (game.precio ? Number(game.precio).toFixed(2) : "29.99")}
+                    genre={Array.isArray(game.genres) ? (typeof game.genres[0] === 'string' ? game.genres[0] : game.genres[0]?.name) : (game.genres || "General")}
+                    price={game.price}
+                    oldPrice={game.oldPrice}
+                    precio_original={game.precio_original}
+                    discount={game.discount}
+                    porcentaje_descuento={game.porcentaje_descuento}
+                    hasDiscount={game.hasDiscount}
                     isOwned={game.isOwned}
                     inLibrary={game.inLibrary}
                   />

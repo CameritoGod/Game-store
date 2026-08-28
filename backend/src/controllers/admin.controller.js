@@ -8,6 +8,9 @@ const catalogDAO = new CatalogDAO();
 const discountDAO = new DiscountDAO();
 const gameRefDAO = new GameReferenceDAO();
 
+/**
+ * Consulta indicadores globales de la tienda (ingresos totales, órdenes y usuarios registrados).
+ */
 exports.getMetrics = async (req, res, next) => {
   try {
     const metrics = await purchaseDAO.getAdminMetrics();
@@ -17,6 +20,9 @@ exports.getMetrics = async (req, res, next) => {
   }
 };
 
+/**
+ * Consulta todas las órdenes de compra con detalle de usuarios y juegos.
+ */
 exports.getAllPurchases = async (req, res, next) => {
   try {
     const purchases = await purchaseDAO.getAllPurchases();
@@ -26,6 +32,9 @@ exports.getAllPurchases = async (req, res, next) => {
   }
 };
 
+/**
+ * Consulta el listado de juegos registrados en el catálogo comercial.
+ */
 exports.getCatalog = async (req, res, next) => {
   try {
     const catalog = await catalogDAO.findAll();
@@ -35,6 +44,9 @@ exports.getCatalog = async (req, res, next) => {
   }
 };
 
+/**
+ * Establece o actualiza el precio personalizado y estado de un juego en catálogo.
+ */
 exports.setCatalogPrice = async (req, res, next) => {
   try {
     const { id_juego, nombre, imagen_url, precio_actual, activo } = req.body;
@@ -42,7 +54,6 @@ exports.setCatalogPrice = async (req, res, next) => {
       return res.status(400).json({ message: 'Se requiere id_juego y precio_actual' });
     }
 
-    // Asegurar que el juego existe en JUEGOS_REFERENCIA
     if (nombre) {
       await gameRefDAO.upsert(Number(id_juego), nombre, imagen_url);
     }
@@ -54,6 +65,9 @@ exports.setCatalogPrice = async (req, res, next) => {
   }
 };
 
+/**
+ * Alterna el estado activo/inactivo de un juego en el catálogo.
+ */
 exports.toggleCatalogStatus = async (req, res, next) => {
   try {
     const { id_juego, activo } = req.body;
@@ -67,6 +81,9 @@ exports.toggleCatalogStatus = async (req, res, next) => {
   }
 };
 
+/**
+ * Consulta todas las promociones y campañas de descuento.
+ */
 exports.getDiscounts = async (req, res, next) => {
   try {
     const discounts = await discountDAO.getAllDiscounts();
@@ -76,6 +93,9 @@ exports.getDiscounts = async (req, res, next) => {
   }
 };
 
+/**
+ * Crea una campaña promocional de descuento vinculando los juegos seleccionados.
+ */
 exports.createDiscount = async (req, res, next) => {
   try {
     const { nombre, descripcion, porcentaje, fecha_inicio, fecha_fin, gameIds, games } = req.body;
@@ -93,7 +113,6 @@ exports.createDiscount = async (req, res, next) => {
       return res.status(400).json({ message: 'La fecha de fin debe ser posterior o igual a la fecha de inicio' });
     }
 
-    // Asegurar referencias de juegos en JUEGOS_REFERENCIA antes de asociar
     const finalGameIds = [];
 
     if (Array.isArray(games) && games.length > 0) {
@@ -135,6 +154,9 @@ exports.createDiscount = async (req, res, next) => {
   }
 };
 
+/**
+ * Elimina una campaña de descuento por su identificador.
+ */
 exports.deleteDiscount = async (req, res, next) => {
   try {
     const discountId = parseInt(req.params.id, 10);

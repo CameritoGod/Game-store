@@ -1,7 +1,7 @@
 /**
  * Servicio de Cálculo Determinista de Precios y Aplicación de Ofertas (PriceService)
  * Garantiza que para el mismo id_juego (IGDB ID), el precio base sea constante y predecible,
- * y aplica dinámicamente las promociones activas si existen en la base de datos.
+ * respetando los precios personalizados de catálogo y aplicando dinámicamente las promociones activas.
  */
 class PriceService {
   /**
@@ -26,18 +26,21 @@ class PriceService {
   }
 
   /**
-   * Adjunta el precio determinista y calcula la oferta activa si existe.
+   * Adjunta el precio base y calcula la oferta activa si existe.
    * @param {Object} game - Objeto de juego
    * @param {Map<number, Object>} activeDiscountsMap - Mapa opcional de ofertas activas por id_juego
+   * @param {Map<number, number>} catalogMap - Mapa opcional de precios personalizados del catálogo
    * @returns {Object} Objeto enriquecido con propiedades de precio u oferta
    */
-  attachPrice(game, activeDiscountsMap = null) {
+  attachPrice(game, activeDiscountsMap = null, catalogMap = null) {
     if (!game) return game;
 
     const gameId = Number(game.id || game.id_juego);
-    const basePrice = this.calculateBasePrice(gameId);
+    const basePrice = (catalogMap && catalogMap.has(gameId))
+      ? catalogMap.get(gameId)
+      : this.calculateBasePrice(gameId);
 
-    // Verificar si el juego tiene una oferta activa
+    // Verificar si el juego tiene una oferta activa hoy
     const activeDiscount = activeDiscountsMap ? activeDiscountsMap.get(gameId) : null;
 
     if (activeDiscount && activeDiscount.porcentaje > 0) {
@@ -63,6 +66,8 @@ class PriceService {
       precio: basePrice,
       oldPrice: `$${basePrice.toFixed(2)}`,
       precio_original: basePrice,
+      discount: null,
+      porcentaje_descuento: 0,
       hasDiscount: false
     };
   }
@@ -71,11 +76,12 @@ class PriceService {
    * Adjunta los precios y ofertas a un arreglo de juegos.
    * @param {Array} games - Lista de juegos
    * @param {Map<number, Object>} activeDiscountsMap - Mapa opcional de ofertas activas
+   * @param {Map<number, number>} catalogMap - Mapa opcional de precios de catálogo
    * @returns {Array} Lista de juegos con precios calculados
    */
-  attachPrices(games, activeDiscountsMap = null) {
+  attachPrices(games, activeDiscountsMap = null, catalogMap = null) {
     if (!Array.isArray(games)) return [];
-    return games.map((g) => this.attachPrice(g, activeDiscountsMap));
+    return games.map((g) => this.attachPrice(g, activeDiscountsMap, catalogMap));
   }
 }
 

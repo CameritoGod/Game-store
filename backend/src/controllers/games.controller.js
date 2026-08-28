@@ -2,14 +2,14 @@ const igdbService = require('../services/igdb.service');
 const priceService = require('../services/price.service');
 const LibraryDAO = require('../dao/mysql/LibraryDAO');
 const DiscountDAO = require('../dao/mysql/DiscountDAO');
+const CatalogDAO = require('../dao/mysql/CatalogDAO');
 
 const libraryDAO = new LibraryDAO();
 const discountDAO = new DiscountDAO();
+const catalogDAO = new CatalogDAO();
 
 /**
- * Función auxiliar para enriquecer juegos con:
- * 1. Precio determinista y ofertas vigentes calculadas (PriceService + DiscountDAO).
- * 2. Estado de propiedad en biblioteca (isOwned / inLibrary) si el usuario está autenticado.
+ * Enriquece datos de juegos con precios comerciales, ofertas vigentes y estado de posesión en biblioteca.
  */
 async function enrichGames(games, userId = null) {
   if (!games) return games;
@@ -17,28 +17,41 @@ async function enrichGames(games, userId = null) {
   const isArray = Array.isArray(games);
   const gamesList = isArray ? games : [games];
 
-  // 1. Obtener ofertas activas hoy
+  // 1. Obtener mapa de descuentos activos hoy
   let activeDiscountsMap = new Map();
   try {
     activeDiscountsMap = await discountDAO.getAllActiveDiscountsMap();
-  } catch (e) {
-    console.error('Error al obtener ofertas activas en enrichGames:', e.message);
+  } catch {
+    activeDiscountsMap = new Map();
   }
 
-  // 2. Obtener Set de IDs comprados si existe usuario autenticado
+  // 2. Obtener mapa de precios de catálogo comercial activo
+  let catalogMap = new Map();
+  try {
+    const catalogRows = await catalogDAO.findAll();
+    for (const cat of catalogRows) {
+      if (cat.activo) {
+        catalogMap.set(Number(cat.id_juego), parseFloat(cat.precio_actual));
+      }
+    }
+  } catch {
+    catalogMap = new Map();
+  }
+
+  // 3. Obtener identificadores de juegos en biblioteca si hay sesión activa
   let ownedIdsSet = new Set();
   if (userId) {
     try {
       const ownedIds = await libraryDAO.getUserLibraryGameIds(userId);
       ownedIdsSet = new Set(ownedIds);
-    } catch (e) {
-      console.error('Error al obtener la biblioteca del usuario en enrichGames:', e.message);
+    } catch {
+      ownedIdsSet = new Set();
     }
   }
 
-  // 3. Enriquecer cada juego con precio determinista, promociones y propiedad isOwned/inLibrary
+  // 4. Vincular precios, descuentos y flags isOwned / inLibrary
   const enriched = gamesList.map((game) => {
-    const gameWithPriceAndDiscount = priceService.attachPrice(game, activeDiscountsMap);
+    const gameWithPriceAndDiscount = priceService.attachPrice(game, activeDiscountsMap, catalogMap);
     const owned = ownedIdsSet.has(Number(gameWithPriceAndDiscount.id || gameWithPriceAndDiscount.id_juego));
     return {
       ...gameWithPriceAndDiscount,
@@ -50,14 +63,16 @@ async function enrichGames(games, userId = null) {
   return isArray ? enriched : enriched[0];
 }
 
-// Buscar juegos
+/**
+ * Busca juegos en el catálogo mediante IGDB con algoritmo de relevancia.
+ */
 exports.searchGames = async (req, res, next) => {
   try {
     const { q, limit = 20 } = req.query;
 
     if (!q || q.trim().length < 2) {
       return res.status(400).json({
-        error: 'El término de búsqueda debe tener al menos 2 caracteres',
+        error: 'El término de búsqueda debe tener al menos 2 caracteres'
       });
     }
 
@@ -69,7 +84,9 @@ exports.searchGames = async (req, res, next) => {
   }
 };
 
-// Juegos mejor valorados
+/**
+ * Obtiene los títulos con mejor puntuación agregada.
+ */
 exports.getTopRatedGames = async (req, res, next) => {
   try {
     const { limit = 5 } = req.query;
@@ -82,7 +99,9 @@ exports.getTopRatedGames = async (req, res, next) => {
   }
 };
 
-// Juegos Trending
+/**
+ * Obtiene juegos con mayor popularidad y tendencia actual.
+ */
 exports.getTrendingGames = async (req, res, next) => {
   try {
     const { limit = 5 } = req.query;
@@ -95,7 +114,9 @@ exports.getTrendingGames = async (req, res, next) => {
   }
 };
 
-// Obtener juego por ID
+/**
+ * Obtiene el detalle completo de un juego específico por ID.
+ */
 exports.getGameById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -118,24 +139,23 @@ exports.getGameById = async (req, res, next) => {
   }
 };
 
-// Explorar juegos
+/**
+ * Obtiene el catálogo exploratorio con paginación y filtros por género y año.
+ */
 exports.getAllGames = async (req, res, next) => {
   try {
     const { limit = 20, offset = 0, genre, year } = req.query;
     const parsedLimit = parseInt(limit, 10);
     const parsedOffset = parseInt(offset, 10);
 
-    // Validar limit
     if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 50) {
       return res.status(400).json({ error: 'El límite debe estar entre 1 y 50' });
     }
 
-    // validar offset
     if (isNaN(parsedOffset) || parsedOffset < 0) {
       return res.status(400).json({ error: 'El offset debe ser un número mayor o igual a 0' });
     }
 
-    // Validar genero
     let genreId = null;
     if (genre !== undefined && genre !== '' && genre !== 'all') {
       genreId = parseInt(genre, 10);
@@ -144,7 +164,6 @@ exports.getAllGames = async (req, res, next) => {
       }
     }
 
-    // Validar año
     let parsedYear = null;
     if (year !== undefined && year !== '' && String(year).trim().length === 4) {
       const tempYear = parseInt(year, 10);
@@ -153,7 +172,6 @@ exports.getAllGames = async (req, res, next) => {
       }
     }
 
-    // Consultar juegos con paginación y filtrado por género y año
     const games = await igdbService.getAllGames(parsedLimit, parsedOffset, genreId, parsedYear);
     const enrichedGames = await enrichGames(games, req.user?.id_usuario);
 
@@ -173,7 +191,9 @@ exports.getAllGames = async (req, res, next) => {
   }
 };
 
-// Obtener géneros
+/**
+ * Obtiene el listado de géneros disponibles en IGDB.
+ */
 exports.getGenres = async (req, res, next) => {
   try {
     const genres = await igdbService.getGenres();
@@ -183,7 +203,9 @@ exports.getGenres = async (req, res, next) => {
   }
 };
 
-// Obtener ofertas activas públicas
+/**
+ * Obtiene la lista de juegos con ofertas activas vigentes.
+ */
 exports.getActiveOffers = async (req, res, next) => {
   try {
     const activeDiscountsMap = await discountDAO.getAllActiveDiscountsMap();
@@ -200,8 +222,8 @@ exports.getActiveOffers = async (req, res, next) => {
         if (game) {
           gamesList.push(game);
         }
-      } catch (err) {
-        console.error(`Error al obtener juego #${gId} para ofertas:`, err.message);
+      } catch {
+        // Omisión silenciosa de juego no disponible en IGDB
       }
     }
 

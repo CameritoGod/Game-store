@@ -48,14 +48,14 @@ export default function UserDashboard() {
       email: user.email || "",
       password: ""
     });
-    getFavorites().then(setFavorites).catch(console.error);
+    getFavorites().then(setFavorites).catch(() => setFavorites([]));
     setAvatarPreview(getAvatarUrl(user));
   }, [user]);
 
   // Carga los juegos adquiridos en la biblioteca del usuario
   useEffect(() => {
     if (!user) return;
-    getLibrary().then(setLibrary).catch(console.error);
+    getLibrary().then(setLibrary).catch(() => setLibrary([]));
   }, [user]);
 
   if (!user) return null;
@@ -83,7 +83,6 @@ export default function UserDashboard() {
       setIsAvatarModalOpen(false);
       showSuccess("¡Foto de perfil y avatar actualizados con éxito!");
     } catch (error) {
-      console.error("Error al actualizar avatar:", error);
       showError(error, "Error al actualizar avatar");
     } finally {
       setSavingAvatar(false);
@@ -140,7 +139,6 @@ export default function UserDashboard() {
       setFavorites(prev => prev.filter(game => Number(game.id_juego) !== Number(id_juego)));
       showSuccess("Juego eliminado de tus favoritos");
     } catch (error) {
-      console.error("Error eliminando favorito:", error);
       showError(error, "No se pudo eliminar de favoritos");
     }
   };

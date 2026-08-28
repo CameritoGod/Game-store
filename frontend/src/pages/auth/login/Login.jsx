@@ -48,7 +48,6 @@ export default function Login() {
         navigate(response.role === "admin" ? "/admin" : "/user");
       }
     } catch (error) {
-      console.error("Error de autenticación", error);
       showError(error, isRegister ? "Error en el Registro" : "Error al Iniciar Sesión");
     } finally {
       setIsSubmitting(false);

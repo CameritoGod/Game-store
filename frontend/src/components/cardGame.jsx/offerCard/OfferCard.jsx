@@ -14,6 +14,8 @@ export default function OfferCard({
   precio_original,
   discount,
   porcentaje,
+  porcentaje_descuento,
+  hasDiscount,
   isOwned,
   inLibrary
 }) {
@@ -26,18 +28,26 @@ export default function OfferCard({
 
   // Formateo de precio base y porcentaje de rebaja
   const basePriceNum = parseFloat(String(oldPrice || precio_original || price || 59.99).replace("$", "")) || 59.99;
-  const pctNum = parseInt(String(discount || porcentaje || 20).replace(/[^0-9]/g, ""), 10) || 20;
+  const pctNum = parseInt(String(discount || porcentaje || porcentaje_descuento || 20).replace(/[^0-9]/g, ""), 10) || 20;
 
-  const finalPriceStr = typeof price === "number"
-    ? price.toFixed(2)
-    : (basePriceNum * (1 - pctNum / 100)).toFixed(2);
+  const finalPriceNum = typeof price === "number"
+    ? price
+    : parseFloat((basePriceNum * (1 - pctNum / 100)).toFixed(2));
+  const finalPriceStr = finalPriceNum.toFixed(2);
 
   const handleAdd = () => {
     addToCart({
       id: gameId,
+      id_juego: gameId,
       title: gameTitle,
+      name: gameTitle,
       image: gameImage,
-      price: finalPriceStr,
+      price: finalPriceNum,
+      oldPrice: `$${basePriceNum.toFixed(2)}`,
+      precio_original: basePriceNum,
+      discount: `-${pctNum}%`,
+      porcentaje_descuento: pctNum,
+      hasDiscount: true
     });
   };
 

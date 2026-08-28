@@ -20,14 +20,13 @@ export default function Sidebar({ open, onClose }) {
     if (!user) return;
     getLibrary()
       .then(data => setLibrary(Array.isArray(data) ? data : []))
-      .catch(err => {
-        console.error("Error cargando biblioteca en sidebar:", err);
+      .catch(() => {
         setLibrary([]);
       });
   }, [user]);
 
   useEffect(() => {
-    getGenres().then(setGenres).catch(console.error);
+    getGenres().then(setGenres).catch(() => setGenres([]));
   }, []);
 
   const filterNavigate = (genreId) => {

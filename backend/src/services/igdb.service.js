@@ -49,8 +49,6 @@ class IGDBService {
       this.tokenExpiry =
         Date.now() + (response.data.expires_in - 60) * 1000;
 
-      console.log('✅ Token de IGDB obtenido correctamente');
-
       return this.accessToken;
     } catch (error) {
       console.error(
@@ -112,9 +110,6 @@ class IGDBService {
       .map((part) => `${part};`)
       .join(' ');
 
-    console.log('📤 Consulta IGDB:');
-    console.log(queryStr);
-
     try {
       const response = await axios.post(
         `${this.apiUrl.replace(/\/$/, '')}/${endpoint}`,
@@ -161,7 +156,6 @@ class IGDBService {
     const cacheKey = `search_${query}_${limit}`;
     const cached = cache.get(cacheKey);
     if (cached) {
-      console.log('📦 Respuesta desde caché');
       return cached;
     }
 

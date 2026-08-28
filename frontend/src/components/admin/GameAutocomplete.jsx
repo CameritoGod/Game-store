@@ -85,8 +85,7 @@ export default function GameAutocomplete({
         });
 
         setResults(Array.from(combinedMap.values()).slice(0, 10));
-      } catch (err) {
-        console.error("Error consultando autocompletado de juegos:", err);
+      } catch {
         setResults([]);
       } finally {
         setLoading(false);

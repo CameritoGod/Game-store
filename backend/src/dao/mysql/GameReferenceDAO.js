@@ -1,7 +1,13 @@
 const IGameReferenceDAO = require('../../interfaces/IGameReferenceDAO');
 const pool = require('../../config/db');
 
+/**
+ * Data Access Object para sincronización de metadatos base de juegos (título, carátula) en MySQL.
+ */
 class GameReferenceDAO extends IGameReferenceDAO {
+  /**
+   * Inserta o actualiza el nombre e imagen de un juego en la tabla de referencia.
+   */
   async upsert(id_juego, nombre, imagen_url) {
     const [result] = await pool.query(
       `INSERT INTO JUEGOS_REFERENCIA (id_juego, nombre, imagen_url)
@@ -14,6 +20,9 @@ class GameReferenceDAO extends IGameReferenceDAO {
     return result;
   }
 
+  /**
+   * Busca los metadatos de un juego por su identificador único.
+   */
   async findById(id_juego) {
     const [rows] = await pool.query(
       `SELECT * FROM JUEGOS_REFERENCIA WHERE id_juego = ?`,
@@ -22,6 +31,9 @@ class GameReferenceDAO extends IGameReferenceDAO {
     return rows[0] || null;
   }
 
+  /**
+   * Retorna todas las referencias de juegos ordenadas alfabéticamente.
+   */
   async findAll() {
     const [rows] = await pool.query(
       `SELECT * FROM JUEGOS_REFERENCIA ORDER BY nombre ASC`

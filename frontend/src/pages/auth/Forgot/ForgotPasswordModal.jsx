@@ -249,6 +249,14 @@ export default function ForgotPasswordModal({ show, onClose }) {
                   />
                 </div>
 
+                {/* Aviso informativo de Spam / Correo no deseado */}
+                <div className="fp-spam-notice d-flex align-items-start gap-2 p-2 mb-3">
+                  <i className="bi bi-info-circle-fill text-info mt-1 flex-shrink-0"></i>
+                  <span className="small text-muted" style={{ fontSize: "12px", lineHeight: "1.4" }}>
+                    ¿No encuentras el correo en tu bandeja principal? Recuerda revisar tu carpeta de <strong className="text-light">Spam o Correo no deseado</strong>.
+                  </span>
+                </div>
+
                 <div className="d-flex justify-content-between align-items-center mb-4 px-1">
                   <button
                     type="button"

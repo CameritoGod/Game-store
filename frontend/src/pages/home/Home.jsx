@@ -50,7 +50,7 @@ export default function Home() {
         .then((data) => {
           if (isMounted) setTrendingGames(data);
         })
-        .catch((err) => console.error(err))
+        .catch(() => {})
         .finally(() => {
           if (isMounted) setLoadingTrending(false);
         });
@@ -60,7 +60,7 @@ export default function Home() {
         .then((data) => {
           if (isMounted) setRecommendations(data);
         })
-        .catch((err) => console.error(err))
+        .catch(() => {})
         .finally(() => {
           if (isMounted) setLoadingRecommendations(false);
         });
@@ -70,7 +70,7 @@ export default function Home() {
         .then((data) => {
           if (isMounted) setOffers(data);
         })
-        .catch((err) => console.error(err))
+        .catch(() => {})
         .finally(() => {
           if (isMounted) setLoadingOffers(false);
         });
@@ -80,7 +80,7 @@ export default function Home() {
         .then((data) => {
           if (isMounted) setMoreGames(data);
         })
-        .catch((err) => console.error(err))
+        .catch(() => {})
         .finally(() => {
           if (isMounted) setLoadingMoreGames(false);
         });

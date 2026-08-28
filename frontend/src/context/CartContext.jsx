@@ -7,6 +7,9 @@ import { checkoutCart } from "../api/userApi";
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
+/**
+ * Proveedor global de estado para el carrito de compras con persistencia local y cálculo de descuentos.
+ */
 export function CartProvider({ children }) {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
@@ -16,22 +19,25 @@ export function CartProvider({ children }) {
   const audioRef = useRef(null);
   const count = cartItems.length;
 
+  // Precarga de audio para feedback sonoro al agregar artículos
   useEffect(() => {
     audioRef.current = new Audio("/sounds/compra.mp3");
     audioRef.current.volume = 0.5;
   }, []);
 
+  // Cargar estado inicial del carrito desde localStorage
   useEffect(() => {
     const stored = localStorage.getItem("cart");
     if (stored) {
       try {
         setCartItems(JSON.parse(stored));
-      } catch (e) {
-        console.error(e);
+      } catch {
+        // Ignorar datos corruptos en storage
       }
     }
   }, []);
 
+  // Sincronizar cambios del carrito con localStorage
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
   }, [cartItems]);
@@ -58,6 +64,17 @@ export function CartProvider({ children }) {
       ? rawImage 
       : '/nulls/placeholder-game.svg';
 
+    const finalPrice = Number(game.price !== undefined ? game.price : (game.precio !== undefined ? game.precio : 19.99));
+    
+    // Extraer precio original numérico
+    const rawOldPrice = game.precio_original !== undefined ? game.precio_original : game.oldPrice;
+    const originalPrice = rawOldPrice
+      ? Number(String(rawOldPrice).replace(/[^0-9.]/g, ''))
+      : finalPrice;
+
+    const discountPct = game.porcentaje_descuento || (game.discount ? Number(String(game.discount).replace(/[^0-9]/g, '')) : 0);
+    const hasDiscount = Boolean(game.hasDiscount || (originalPrice > finalPrice) || (discountPct > 0));
+
     const formattedGame = {
       id: gameId,
       id_juego: gameId,
@@ -66,7 +83,11 @@ export function CartProvider({ children }) {
       image: imageUrl,
       cover: imageUrl,
       imagen_url: imageUrl,
-      price: Number(game.precio_actual || game.price || 19.99)
+      price: finalPrice,
+      originalPrice: hasDiscount ? Math.max(originalPrice, finalPrice) : finalPrice,
+      hasDiscount: hasDiscount,
+      discount: game.discount || (discountPct > 0 ? `-${discountPct}%` : null),
+      porcentaje_descuento: discountPct
     };
 
     setCartItems(prev => [...prev, formattedGame]);
@@ -104,8 +125,19 @@ export function CartProvider({ children }) {
     }
   };
 
+  // Cálculo financiero exacto del carrito
+  const subtotal = cartItems.reduce(
+    (total, item) => total + Number(item.originalPrice || item.price || 0),
+    0
+  );
+
+  const totalDiscount = cartItems.reduce(
+    (total, item) => total + Math.max(0, Number(item.originalPrice || item.price || 0) - Number(item.price || 0)),
+    0
+  );
+
   const totalPrice = cartItems.reduce(
-    (total, item) => total + Number(item.price || item.precio || 0),
+    (total, item) => total + Number(item.price || 0),
     0
   );
 
@@ -117,6 +149,8 @@ export function CartProvider({ children }) {
         removeFromCart,
         clearCart,
         processCheckout,
+        subtotal,
+        totalDiscount,
         totalPrice,
         isInCart,
         purchasing,

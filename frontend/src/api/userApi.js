@@ -2,6 +2,9 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+/**
+ * Cliente Axios autenticado para peticiones de usuario.
+ */
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -9,6 +12,7 @@ export const api = axios.create({
   }
 });
 
+// Interceptor para inyectar el token JWT en las cabeceras
 api.interceptors.request.use(
   (config) => {
     const savedUser = localStorage.getItem("user");
@@ -18,8 +22,8 @@ api.interceptors.request.use(
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-      } catch (e) {
-        console.error("Error parsing user from localStorage:", e);
+      } catch {
+        // Formato inválido en storage omitido silenciosamente
       }
     }
     return config;
@@ -27,12 +31,17 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+/**
+ * Normaliza la URL del avatar garantizando un fallback de DiceBear.
+ */
 export const formatAvatarUrl = (avatar) => {
   if (!avatar) return 'https://api.dicebear.com/9.x/bottts/svg?seed=Felix';
-  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image')) return avatar;
   return avatar;
 };
 
+/**
+ * Actualiza el avatar del usuario mediante DiceBear.
+ */
 export const updateAvatar = async (avatarUrl) => {
   const { data } = await api.put('/user/avatar', { avatar_url: avatarUrl });
   return {
@@ -41,6 +50,9 @@ export const updateAvatar = async (avatarUrl) => {
   };
 };
 
+/**
+ * Actualiza la información del perfil del usuario (nombre, nickname, contraseña).
+ */
 export const updateProfile = async (userId, profileData) => {
   const { data } = await api.put(`/user/profile`, profileData);
   return {
@@ -49,37 +61,58 @@ export const updateProfile = async (userId, profileData) => {
   };
 };
 
+/**
+ * Agrega un juego a la lista de favoritos del usuario.
+ */
 export const addFavorite = async (gameData) => {
   const { data } = await api.post('/user/favorites', gameData);
   return data;
 };
 
+/**
+ * Consulta la lista de juegos favoritos del usuario.
+ */
 export const getFavorites = async () => {
   const { data } = await api.get('/user/favorites');
   return Array.isArray(data) ? data : [];
 };
 
+/**
+ * Elimina un juego de la lista de favoritos por su ID.
+ */
 export const deleteFavorite = async (gameId) => {
   const { data } = await api.delete(`/user/favorites/${gameId}`);
   return data;
 };
 
+/**
+ * Procesa la compra de los artículos presentes en el carrito.
+ */
 export const checkoutCart = async (items) => {
   const formattedItems = Array.isArray(items) ? items : (items?.items || []);
   const { data } = await api.post('/user/purchases', { items: formattedItems });
   return data;
 };
 
+/**
+ * Alias de checkout para compatibilidad de compras.
+ */
 export const addPurchases = async (purchaseData) => {
   const items = Array.isArray(purchaseData) ? purchaseData : (purchaseData?.items || []);
   return await checkoutCart(items);
 };
 
+/**
+ * Consulta el historial de compras y transacciones del usuario.
+ */
 export const getPurchases = async () => {
   const { data } = await api.get('/user/purchases');
   return Array.isArray(data) ? data : [];
 };
 
+/**
+ * Consulta la biblioteca de juegos adquiridos por el usuario.
+ */
 export const getLibrary = async () => {
   const { data } = await api.get('/user/library');
   return Array.isArray(data) ? data : [];
