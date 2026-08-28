@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const UserDAO = require('../dao/mysql/UserDAO');
+const emailService = require('../services/emailService');
 
 const userDAO = new UserDAO();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key_gamestore_2026';
@@ -124,22 +125,32 @@ exports.login = async (req, res, next) => {
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-    const user = await userDAO.findByEmail(email);
+    const cleanEmail = email.trim();
+    const user = await userDAO.findByEmail(cleanEmail);
 
     if (!user) {
-      return res.status(444).json({ message: 'Si el correo existe, se enviará el enlace de recuperación.' });
+      return res.status(404).json({ message: 'No encontramos ninguna cuenta asociada a este correo electrónico.' });
     }
 
-    // Generar token hash y vencimiento (1 hora)
-    const resetToken = crypto.randomBytes(20).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-    const expires = new Date(Date.now() + 3600000); // 1h
+    // Generar código OTP criptográficamente seguro de 6 dígitos
+    const code = crypto.randomInt(100000, 999999).toString();
+    const tokenHash = crypto.createHash('sha256').update(code).digest('hex');
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos de validez
 
-    await userDAO.setResetToken(email, tokenHash, expires);
+    await userDAO.setResetToken(cleanEmail, tokenHash, expires);
+
+    // Enviar correo electrónico vía Nodemailer Gmail
+    try {
+      await emailService.sendPasswordResetEmail(cleanEmail, code, user.nickname || user.nombre);
+    } catch (mailError) {
+      console.error('❌ Error al enviar correo de recuperación con Nodemailer:', mailError);
+      return res.status(500).json({ message: 'Error al enviar el correo de recuperación. Revisa la configuración del servidor.' });
+    }
 
     return res.json({
-      message: 'Instrucciones de recuperación enviadas correctamente.',
-      resetToken // Se devuelve para pruebas en entornos locales sin servidor SMTP
+      message: 'Código de verificación enviado correctamente a tu correo.',
+      email: cleanEmail,
+      nickname: user.nickname || user.nombre
     });
   } catch (error) {
     next(error);
@@ -149,14 +160,20 @@ exports.forgotPassword = async (req, res, next) => {
 exports.verifyCode = async (req, res, next) => {
   try {
     const { email, code } = req.body;
-    const tokenHash = crypto.createHash('sha256').update(code).digest('hex');
-    const user = await userDAO.findByResetToken(tokenHash);
+    const cleanEmail = email.trim();
+    const cleanCode = code.trim();
 
-    if (!user || user.email !== email) {
-      return res.status(400).json({ message: 'Código o token de recuperación inválido o expirado' });
+    const tokenHash = crypto.createHash('sha256').update(cleanCode).digest('hex');
+    const user = await userDAO.verifyResetCode(cleanEmail, tokenHash);
+
+    if (!user) {
+      return res.status(400).json({ message: 'El código de verificación es inválido o ha expirado.' });
     }
 
-    return res.json({ message: 'Código verificado exitosamente' });
+    return res.json({
+      message: 'Código verificado exitosamente.',
+      valid: true
+    });
   } catch (error) {
     next(error);
   }
@@ -164,20 +181,25 @@ exports.verifyCode = async (req, res, next) => {
 
 exports.resetPassword = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const user = await userDAO.findByEmail(email);
+    const { email, code, password } = req.body;
+    const cleanEmail = email.trim();
+    const cleanCode = code.trim();
+
+    // Validar código OTP y vigencia antes de permitir el cambio
+    const tokenHash = crypto.createHash('sha256').update(cleanCode).digest('hex');
+    const user = await userDAO.verifyResetCode(cleanEmail, tokenHash);
 
     if (!user) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+      return res.status(400).json({ message: 'El código de verificación es inválido o ha expirado. Solicita uno nuevo.' });
     }
 
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password.trim(), salt);
 
     await userDAO.updatePassword(user.id_usuario, hashedPassword);
-    await userDAO.setResetToken(email, null, null);
+    await userDAO.setResetToken(cleanEmail, null, null);
 
-    return res.json({ message: 'Contraseña actualizada con éxito' });
+    return res.json({ message: 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.' });
   } catch (error) {
     next(error);
   }

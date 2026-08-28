@@ -94,9 +94,9 @@ const authService = {
     }
   },
 
-  async resetPassword(email, password) {
+  async resetPassword(email, code, password) {
     try {
-      const res = await axios.post(`${API_URL}/reset-password`, { email, password }, {
+      const res = await axios.post(`${API_URL}/reset-password`, { email, code, password }, {
         headers: { "Content-Type": "application/json" }
       });
       return res.data;

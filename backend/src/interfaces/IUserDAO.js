@@ -39,6 +39,10 @@ class IUserDAO {
     throw new Error("Method findByResetToken() not implemented");
   }
 
+  async verifyResetCode(email, tokenHash) {
+    throw new Error("Method verifyResetCode() not implemented");
+  }
+
   async getAllUsers() {
     throw new Error("Method getAllUsers() not implemented");
   }

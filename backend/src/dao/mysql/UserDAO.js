@@ -97,6 +97,15 @@ class UserDAO extends IUserDAO {
     return rows[0] || null;
   }
 
+  async verifyResetCode(email, tokenHash) {
+    const [rows] = await pool.query(
+      `SELECT * FROM USUARIOS
+       WHERE email = ? AND reset_token_hash = ? AND reset_expires > NOW()`,
+      [email, tokenHash]
+    );
+    return rows[0] || null;
+  }
+
   async getAllUsers() {
     const [rows] = await pool.query(
       `SELECT u.id_usuario, u.nombre, u.nickname, u.email, u.avatar_url, r.nombre AS rol, u.creado_en

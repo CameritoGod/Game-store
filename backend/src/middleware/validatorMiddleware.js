@@ -54,6 +54,51 @@ exports.validateLogin = (req, res, next) => {
   next();
 };
 
+exports.validateForgotPassword = (req, res, next) => {
+  req.body = filterWhitelistedFields(req.body, ['email']);
+  const { email } = req.body;
+
+  if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
+    return res.status(400).json({ message: 'Ingresa un correo electrónico válido.' });
+  }
+
+  next();
+};
+
+exports.validateVerifyCode = (req, res, next) => {
+  req.body = filterWhitelistedFields(req.body, ['email', 'code']);
+  const { email, code } = req.body;
+
+  if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
+    return res.status(400).json({ message: 'Ingresa un correo electrónico válido.' });
+  }
+
+  if (!code || typeof code !== 'string' || code.trim().length < 4) {
+    return res.status(400).json({ message: 'Ingresa el código de verificación válido.' });
+  }
+
+  next();
+};
+
+exports.validateResetPassword = (req, res, next) => {
+  req.body = filterWhitelistedFields(req.body, ['email', 'code', 'password']);
+  const { email, code, password } = req.body;
+
+  if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email.trim())) {
+    return res.status(400).json({ message: 'Ingresa un correo electrónico válido.' });
+  }
+
+  if (!code || typeof code !== 'string' || code.trim().length < 4) {
+    return res.status(400).json({ message: 'Se requiere el código de verificación.' });
+  }
+
+  if (!password || typeof password !== 'string' || password.trim().length < 4) {
+    return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 4 caracteres.' });
+  }
+
+  next();
+};
+
 exports.validateAvatarUpdate = (req, res, next) => {
   req.body = filterWhitelistedFields(req.body, ['avatar_url']);
   const { avatar_url } = req.body;
