@@ -1,7 +1,5 @@
 const IUserDAO = require('../../interfaces/IUserDAO');
 const pool = require('../../config/db');
-const path = require('path');
-const fs = require('fs');
 
 class UserDAO extends IUserDAO {
   async findById(id_usuario) {
@@ -70,22 +68,6 @@ class UserDAO extends IUserDAO {
   }
 
   async updateAvatar(id_usuario, avatar_url) {
-    // 1. Obtener usuario actual para borrar imagen anterior del servidor si aplica
-    const user = await this.findById(id_usuario);
-    if (user && user.avatar_url && user.avatar_url.startsWith('/uploads/avatars/')) {
-      const fileName = path.basename(user.avatar_url);
-      const oldPath = path.join(__dirname, '../../uploads/avatars', fileName);
-      if (fs.existsSync(oldPath)) {
-        try {
-          fs.unlinkSync(oldPath);
-          console.log(`🗑️ Avatar anterior eliminado: ${fileName}`);
-        } catch (e) {
-          console.error('Error eliminando avatar viejo:', e.message);
-        }
-      }
-    }
-
-    // 2. Actualizar avatar_url en BD
     await pool.query(
       `UPDATE USUARIOS
        SET avatar_url = ?

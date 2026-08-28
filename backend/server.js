@@ -4,8 +4,6 @@ const compression = require('compression');
 const helmet = require('helmet');
 require('dotenv').config();
 
-const path = require('path');
-
 const gamesRoutes = require('./src/routes/games.routes');
 const authRoutes = require('./src/routes/auth.routes');
 const userRoutes = require('./src/routes/user.routes');
@@ -14,9 +12,6 @@ const errorHandler = require('./src/middleware/errorHandler');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Servir estáticos para imágenes de avatares subidas
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Middlewares
 app.use(helmet({

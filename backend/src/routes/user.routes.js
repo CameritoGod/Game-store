@@ -2,16 +2,17 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
 const authMiddleware = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware');
 
 // Aplicar authMiddleware a todas las rutas de usuario
 router.use(authMiddleware);
 
-// Perfil
+// Rutas especificas de Perfil y Avatar
 router.get('/profile', userController.getProfile);
 router.put('/profile', userController.updateProfile);
+router.put('/avatar', userController.updateAvatar);
+
+// Rutas parametrizadas por ID
 router.put('/:id', userController.updateProfile);
-router.put('/avatar', upload.single('avatar'), userController.updateAvatar);
 
 // Favoritos
 router.get('/favorites', userController.getFavorites);

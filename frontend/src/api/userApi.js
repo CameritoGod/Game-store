@@ -1,7 +1,6 @@
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const BACKEND_URL = API_BASE_URL.replace('/api', '');
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -29,21 +28,16 @@ api.interceptors.request.use(
 );
 
 export const formatAvatarUrl = (avatar) => {
-  if (!avatar) return '/nulls/null-user-img.png';
-  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
-  if (avatar.startsWith('/uploads')) return `${BACKEND_URL}${avatar}`;
+  if (!avatar) return 'https://api.dicebear.com/9.x/bottts/svg?seed=Felix';
+  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image')) return avatar;
   return avatar;
 };
 
-export const updateAvatar = async (file) => {
-  const formData = new FormData();
-  formData.append('avatar', file);
-  const { data } = await api.put('/user/avatar', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
+export const updateAvatar = async (avatarUrl) => {
+  const { data } = await api.put('/user/avatar', { avatar_url: avatarUrl });
   return {
     ...data,
-    avatar_url: formatAvatarUrl(data.avatar_url)
+    avatar_url: formatAvatarUrl(data.avatar_url || avatarUrl)
   };
 };
 
@@ -51,7 +45,7 @@ export const updateProfile = async (userId, profileData) => {
   const { data } = await api.put(`/user/profile`, profileData);
   return {
     ...data,
-    user: data.user ? { ...data.user, avatar: formatAvatarUrl(data.user.avatar) } : null
+    user: data.user ? { ...data.user, avatar: formatAvatarUrl(data.user.avatar || data.user.avatar_url) } : null
   };
 };
 

@@ -20,6 +20,11 @@ const generateToken = (user) => {
   );
 };
 
+const getDefaultAvatar = (user) => {
+  const seed = user?.nickname || user?.nombre || 'User';
+  return `https://api.dicebear.com/9.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
+};
+
 exports.register = async (req, res, next) => {
   try {
     const { nombre, nickname, email, password, rol } = req.body;
@@ -53,6 +58,7 @@ exports.register = async (req, res, next) => {
     });
 
     const token = generateToken(newUser);
+    const avatarUrl = newUser.avatar_url || getDefaultAvatar(newUser);
 
     return res.status(201).json({
       token,
@@ -65,7 +71,8 @@ exports.register = async (req, res, next) => {
         email: newUser.email,
         role: newUser.rol,
         rol: newUser.rol,
-        avatar: newUser.avatar_url || '/uploads/avatars/default-avatar.png'
+        avatar: avatarUrl,
+        avatar_url: avatarUrl
       }
     });
   } catch (error) {
@@ -92,6 +99,7 @@ exports.login = async (req, res, next) => {
     }
 
     const token = generateToken(user);
+    const avatarUrl = user.avatar_url || getDefaultAvatar(user);
 
     return res.json({
       token,
@@ -104,7 +112,8 @@ exports.login = async (req, res, next) => {
         email: user.email,
         role: user.rol,
         rol: user.rol,
-        avatar: user.avatar_url || '/uploads/avatars/default-avatar.png'
+        avatar: avatarUrl,
+        avatar_url: avatarUrl
       }
     });
   } catch (error) {

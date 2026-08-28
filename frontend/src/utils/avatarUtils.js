@@ -1,6 +1,3 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const BACKEND_URL = API_BASE_URL.replace('/api', '');
-
 export const generateSVGPlaceholder = (nameStr = 'U') => {
   const initials = nameStr
     .trim()
@@ -27,18 +24,15 @@ export const generateSVGPlaceholder = (nameStr = 'U') => {
 
 export const getAvatarUrl = (user) => {
   if (!user) return generateSVGPlaceholder('U');
-  
+
   const avatarPath = user.avatar || user.avatar_url;
   if (avatarPath && typeof avatarPath === 'string' && avatarPath.trim() !== '' && avatarPath !== 'null' && avatarPath !== 'undefined') {
     if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://') || avatarPath.startsWith('data:image')) {
       return avatarPath;
     }
-    if (avatarPath.startsWith('/uploads')) {
-      return `${BACKEND_URL}${avatarPath}`;
-    }
     return avatarPath;
   }
 
-  const name = user.nombre || user.name || user.nickname || 'U';
-  return generateSVGPlaceholder(name);
+  const seed = user.nickname || user.nombre || user.name || 'U';
+  return `https://api.dicebear.com/9.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
 };

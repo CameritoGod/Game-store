@@ -9,10 +9,17 @@ const favoriteDAO = new FavoriteDAO();
 const libraryDAO = new LibraryDAO();
 const purchaseDAO = new PurchaseDAO();
 
+const getDefaultAvatar = (user) => {
+  const seed = user?.nickname || user?.nombre || 'User';
+  return `https://api.dicebear.com/9.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
+};
+
 exports.getProfile = async (req, res, next) => {
   try {
     const user = await userDAO.findById(req.user.id_usuario);
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    const avatarUrl = user.avatar_url || getDefaultAvatar(user);
 
     res.json({
       id: user.id_usuario,
@@ -23,7 +30,8 @@ exports.getProfile = async (req, res, next) => {
       email: user.email,
       role: user.rol,
       rol: user.rol,
-      avatar: user.avatar_url || '/uploads/avatars/default-avatar.png'
+      avatar: avatarUrl,
+      avatar_url: avatarUrl
     });
   } catch (error) {
     next(error);
@@ -32,7 +40,8 @@ exports.getProfile = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
   try {
-    const userId = req.params.id ? parseInt(req.params.id, 10) : req.user.id_usuario;
+    const parsedId = req.params.id ? parseInt(req.params.id, 10) : NaN;
+    const userId = !Number.isNaN(parsedId) ? parsedId : req.user.id_usuario;
 
     // Solo el usuario dueño de la cuenta o un admin puede editar
     if (req.user.id_usuario !== userId && req.user.rol !== 'admin') {
@@ -47,12 +56,14 @@ exports.updateProfile = async (req, res, next) => {
       nickname: nickname
     });
 
-    // Si envió nueva contraseña válida (no vacía ni marcadores de posición)
+    // Si envió nueva contraseña válida
     if (password && typeof password === 'string' && password.trim() !== '' && password !== '********' && password !== '[PASSWORD]' && password.trim().length >= 4) {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password.trim(), salt);
       await userDAO.updatePassword(userId, hashedPassword);
     }
+
+    const avatarUrl = updatedUser.avatar_url || getDefaultAvatar(updatedUser);
 
     res.json({
       message: 'Perfil actualizado con éxito',
@@ -65,7 +76,8 @@ exports.updateProfile = async (req, res, next) => {
         email: updatedUser.email,
         role: updatedUser.rol,
         rol: updatedUser.rol,
-        avatar: updatedUser.avatar_url || '/uploads/avatars/default-avatar.png'
+        avatar: avatarUrl,
+        avatar_url: avatarUrl
       }
     });
   } catch (error) {
@@ -75,16 +87,17 @@ exports.updateProfile = async (req, res, next) => {
 
 exports.updateAvatar = async (req, res, next) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No se subió ninguna imagen' });
+    const { avatar_url } = req.body;
+    if (!avatar_url || typeof avatar_url !== 'string' || avatar_url.trim() === '') {
+      return res.status(400).json({ message: 'Se requiere una URL o identificador válido para el avatar' });
     }
 
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-    const updatedUser = await userDAO.updateAvatar(req.user.id_usuario, avatarUrl);
+    const cleanAvatarUrl = avatar_url.trim();
+    const updatedUser = await userDAO.updateAvatar(req.user.id_usuario, cleanAvatarUrl);
 
     res.json({
       message: 'Avatar actualizado con éxito',
-      avatar_url: avatarUrl,
+      avatar_url: updatedUser.avatar_url || cleanAvatarUrl,
       user: {
         id: updatedUser.id_usuario,
         id_usuario: updatedUser.id_usuario,
@@ -94,7 +107,8 @@ exports.updateAvatar = async (req, res, next) => {
         email: updatedUser.email,
         role: updatedUser.rol,
         rol: updatedUser.rol,
-        avatar: avatarUrl
+        avatar: updatedUser.avatar_url || cleanAvatarUrl,
+        avatar_url: updatedUser.avatar_url || cleanAvatarUrl
       }
     });
   } catch (error) {

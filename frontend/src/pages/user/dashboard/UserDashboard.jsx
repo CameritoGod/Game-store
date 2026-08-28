@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/useAuth";
 import Navbar from "../../../components/navbar/Navbar";
 import Sidebar from "../../../components/Sidebar/Sidebar";
+import AvatarModal from "../../../components/AvatarModal/AvatarModal";
 import { getAvatarUrl, generateSVGPlaceholder } from "../../../utils/avatarUtils";
 import "./UserDashboard.css";
 
@@ -12,18 +13,20 @@ import { updateProfile, updateAvatar, getFavorites, deleteFavorite, getLibrary }
 export default function UserDashboard() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
 
-  // Estados locales para favoritos, biblioteca, edicion de datos y carga de avatar
+  // Estados locales para favoritos, biblioteca, edición de datos y galería de avatares
   const [favorites, setFavorites] = useState([]);
   const [library, setLibrary] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  
+  // Estado para el modal de avatar DiceBear
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
   
   const [avatarPreview, setAvatarPreview] = useState(getAvatarUrl(user));
 
-  // Estado del formulario con la informacion personal del usuario
+  // Estado del formulario con la información personal del usuario
   const [formData, setFormData] = useState({
     nickname: user?.nickname || "",
     name: user?.name || user?.nombre || "",
@@ -54,52 +57,37 @@ export default function UserDashboard() {
 
   if (!user) return null;
 
-  // Activa el selector de archivos oculto al hacer clic en el avatar o boton de subir
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
+  // Abre el modal de la galería de avatares DiceBear
+  const handleOpenAvatarModal = () => {
+    setIsAvatarModalOpen(true);
   };
 
-  // Valida el tipo y tamaño de la imagen seleccionada, genera la vista previa y ejecuta la subida
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (!file.type.match('image.*')) {
-      alert('Solo se permiten archivos de imagen (JPG, PNG, WEBP, GIF)');
-      return;
+  // Guarda el avatar seleccionado de DiceBear y sincroniza con el AuthContext y la BD
+  const handleSaveAvatar = async (selectedAvatarUrl) => {
+    setSavingAvatar(true);
+    try {
+      const response = await updateAvatar(selectedAvatarUrl);
+      const newAvatarUrl = response.avatar_url || selectedAvatarUrl;
+      
+      const updatedUser = {
+        ...user,
+        avatar: newAvatarUrl,
+        avatar_url: newAvatarUrl
+      };
+      
+      login(updatedUser);
+      setAvatarPreview(newAvatarUrl);
+      setIsAvatarModalOpen(false);
+      alert('Avatar actualizado con éxito');
+    } catch (error) {
+      console.error('Error al actualizar avatar:', error);
+      alert(`Error al actualizar avatar: ${error.message}`);
+    } finally {
+      setSavingAvatar(false);
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen no puede superar los 5MB');
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setAvatarPreview(objectUrl);
-
-    // Envia la imagen seleccionada al servidor y actualiza los datos del usuario en la sesion
-    const upload = async () => {
-      setUploadingAvatar(true);
-      try {
-        const response = await updateAvatar(file);
-        const newAvatarUrl = response.avatar_url;
-        const updatedUser = { ...user, avatar: newAvatarUrl, avatar_url: newAvatarUrl };
-        login(updatedUser);
-        setAvatarPreview(newAvatarUrl);
-        alert('Foto de perfil actualizada con éxito');
-      } catch (error) {
-        console.error('Error al subir avatar:', error);
-        alert(`Error al subir avatar: ${error.message}`);
-        setAvatarPreview(getAvatarUrl(user));
-      } finally {
-        setUploadingAvatar(false);
-      }
-    };
-    
-    upload();
-    e.target.value = '';
   };
 
-  // Alterna entre el modo de edicion y lectura. Si se esta editando, guarda los cambios en el servidor
+  // Alterna entre el modo de edición y lectura. Si se está editando, guarda los cambios en el servidor
   const handleEditToggle = async () => {
     if (isEditing) {
       try {
@@ -108,7 +96,7 @@ export default function UserDashboard() {
           nickname: formData.nickname
         };
 
-        // Solo incluir la contraseña si el usuario escribio una nueva
+        // Solo incluir la contraseña si el usuario escribió una nueva
         if (formData.password && formData.password.trim() !== "") {
           if (formData.password.trim().length < 4) {
             alert("La contraseña debe tener al menos 4 caracteres.");
@@ -155,11 +143,11 @@ export default function UserDashboard() {
           <div className="col-xl-3 col-lg-4 col-md-12">
             <div className="ud-card ud-profile">
               
-              {/* Avatar con Trigger de Clic */}
+              {/* Avatar interactivo */}
               <div 
                 className="ud-avatar-container position-relative d-inline-block"
-                onClick={handleAvatarClick}
-                title="Haz clic para cambiar tu foto de perfil"
+                onClick={handleOpenAvatarModal}
+                title="Haz clic para cambiar tu avatar de DiceBear"
                 style={{ cursor: 'pointer' }}
               >
                 <img 
@@ -168,7 +156,7 @@ export default function UserDashboard() {
                   alt="avatar" 
                   style={{ width: 130, height: 130, borderRadius: '50%', objectFit: 'cover' }}
                   onError={(e) => {
-                    // En caso de error al cargar imagen, genera un placeholder SVG con la inicial
+                    // En caso de error al cargar la imagen, genera un placeholder SVG con la inicial
                     e.currentTarget.onerror = null;
                     e.currentTarget.src = generateSVGPlaceholder(user.nickname || user.nombre || 'U');
                   }}
@@ -177,35 +165,21 @@ export default function UserDashboard() {
                 {/* Overlay flotante */}
                 <div 
                   className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
-                  style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '50%', opacity: uploadingAvatar ? 1 : 0, transition: 'opacity 0.25s ease' }}
-                  onMouseEnter={(e) => { if (!uploadingAvatar) e.currentTarget.style.opacity = '1'; }}
-                  onMouseLeave={(e) => { if (!uploadingAvatar) e.currentTarget.style.opacity = '0'; }}
+                  style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '50%', opacity: 0, transition: 'opacity 0.25s ease' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '0'; }}
                 >
-                  {uploadingAvatar ? (
-                    <div className="spinner-border text-light spinner-border-sm" role="status"></div>
-                  ) : (
-                    <>
-                      <i className="bi bi-camera-fill text-white fs-4"></i>
-                      <small className="text-white fw-bold" style={{ fontSize: '0.75rem' }}>Cambiar foto</small>
-                    </>
-                  )}
+                  <i className="bi bi-palette-fill text-white fs-4"></i>
+                  <small className="text-white fw-bold" style={{ fontSize: '0.75rem' }}>Cambiar Avatar</small>
                 </div>
               </div>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                onChange={handleAvatarChange}
-                hidden
-              />
 
               <div className="mt-2">
                 <button 
                   className="btn btn-sm btn-outline-primary rounded-pill px-3 mt-1"
-                  onClick={handleAvatarClick}
+                  onClick={handleOpenAvatarModal}
                 >
-                  <i className="bi bi-upload me-1"></i> Subir Avatar
+                  <i className="bi bi-palette-fill me-1"></i> Cambiar Avatar
                 </button>
               </div>
 
@@ -366,6 +340,15 @@ export default function UserDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Modal Galería de Avatares DiceBear */}
+      <AvatarModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentAvatarUrl={avatarPreview}
+        onSave={handleSaveAvatar}
+        loading={savingAvatar}
+      />
     </>
   );
 }

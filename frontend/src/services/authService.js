@@ -2,12 +2,10 @@ import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 const API_URL = `${API_BASE_URL}/auth`;
-const BACKEND_URL = API_BASE_URL.replace('/api', '');
 
 const formatAvatarUrl = (avatar) => {
-  if (!avatar) return '/nulls/null-user-img.png';
-  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar;
-  if (avatar.startsWith('/uploads')) return `${BACKEND_URL}${avatar}`;
+  if (!avatar) return 'https://api.dicebear.com/9.x/bottts/svg?seed=Felix';
+  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:image')) return avatar;
   return avatar;
 };
 
@@ -39,7 +37,8 @@ const authService = {
       const res = await api.post(`${API_URL}/login`, { email, password });
       const userData = {
         ...res.data.user,
-        avatar: formatAvatarUrl(res.data.user.avatar),
+        avatar: formatAvatarUrl(res.data.user.avatar || res.data.user.avatar_url),
+        avatar_url: formatAvatarUrl(res.data.user.avatar_url || res.data.user.avatar),
         token: res.data.token
       };
       return userData;
@@ -60,7 +59,8 @@ const authService = {
       });
       const userData = {
         ...res.data.user,
-        avatar: formatAvatarUrl(res.data.user.avatar),
+        avatar: formatAvatarUrl(res.data.user.avatar || res.data.user.avatar_url),
+        avatar_url: formatAvatarUrl(res.data.user.avatar_url || res.data.user.avatar),
         token: res.data.token
       };
       return userData;
