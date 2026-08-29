@@ -12,8 +12,8 @@ class CatalogDAO extends ICatalogDAO {
     const [rows] = await pool.query(
       `SELECT c.id_juego, c.precio_actual, c.activo, c.actualizado_en,
               j.nombre, j.imagen_url
-       FROM CATALOGO_JUEGOS c
-       JOIN JUEGOS_REFERENCIA j ON c.id_juego = j.id_juego
+       FROM catalogo_juegos c
+       JOIN juegos_referencia j ON c.id_juego = j.id_juego
        ORDER BY j.nombre ASC`
     );
     return rows;
@@ -26,8 +26,8 @@ class CatalogDAO extends ICatalogDAO {
     const [rows] = await pool.query(
       `SELECT c.id_juego, c.precio_actual, c.activo, c.actualizado_en,
               j.nombre, j.imagen_url
-       FROM CATALOGO_JUEGOS c
-       JOIN JUEGOS_REFERENCIA j ON c.id_juego = j.id_juego
+       FROM catalogo_juegos c
+       JOIN juegos_referencia j ON c.id_juego = j.id_juego
        WHERE c.id_juego = ?`,
       [id_juego]
     );
@@ -39,7 +39,7 @@ class CatalogDAO extends ICatalogDAO {
    */
   async setPrice(id_juego, precio_actual, activo = true) {
     const [result] = await pool.query(
-      `INSERT INTO CATALOGO_JUEGOS (id_juego, precio_actual, activo)
+      `INSERT INTO catalogo_juegos (id_juego, precio_actual, activo)
        VALUES (?, ?, ?)
        ON DUPLICATE KEY UPDATE
          precio_actual = VALUES(precio_actual),
@@ -54,7 +54,7 @@ class CatalogDAO extends ICatalogDAO {
    */
   async toggleActive(id_juego, activo) {
     const [result] = await pool.query(
-      `UPDATE CATALOGO_JUEGOS
+      `UPDATE catalogo_juegos
        SET activo = ?
        WHERE id_juego = ?`,
       [activo, id_juego]

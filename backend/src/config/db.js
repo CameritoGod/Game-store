@@ -46,17 +46,17 @@ const pool = mysql.createPool(dbConfig);
 async function initDB() {
   try {
     const connection = await pool.getConnection();
-    console.log('✅ Conexión exitosa a la Base de Datos MySQL en Aiven');
+    console.log('✅ Conexión exitosa a la Base de Datos MySQL');
 
     await connection.query(`
-      CREATE TABLE IF NOT EXISTS ROLES (
+      CREATE TABLE IF NOT EXISTS roles (
         id_rol INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         nombre VARCHAR(50) NOT NULL UNIQUE
       ) ENGINE=InnoDB;
     `);
 
     await connection.query(`
-      INSERT INTO ROLES (id_rol, nombre) VALUES (1, 'admin'), (2, 'cliente')
+      INSERT INTO roles (id_rol, nombre) VALUES (1, 'admin'), (2, 'cliente')
       ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
     `);
 

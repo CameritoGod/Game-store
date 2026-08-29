@@ -33,9 +33,9 @@ class PurchaseDAO extends IPurchaseDAO {
         const imagen_url = item.cover || item.imagen_url || null;
         const precio_unitario = parseFloat(item.price || item.precio || 0);
 
-        // 1. Asegurar persistencia de metadatos en JUEGOS_REFERENCIA
+        // 1. Asegurar persistencia de metadatos en juegos_referencia
         await connection.query(
-          `INSERT INTO JUEGOS_REFERENCIA (id_juego, nombre, imagen_url)
+          `INSERT INTO juegos_referencia (id_juego, nombre, imagen_url)
            VALUES (?, ?, ?)
            ON DUPLICATE KEY UPDATE
              nombre = VALUES(nombre),
@@ -46,8 +46,8 @@ class PurchaseDAO extends IPurchaseDAO {
         // 2. Comprobar si existe promoción activa para el juego
         const [discRows] = await connection.query(
           `SELECT d.porcentaje
-           FROM DESCUENTOS d
-           JOIN DESCUENTO_JUEGOS dj ON d.id_descuento = dj.id_descuento
+           FROM descuentos d
+           JOIN descuento_juegos dj ON d.id_descuento = dj.id_descuento
            WHERE dj.id_juego = ?
              AND CURRENT_DATE BETWEEN d.fecha_inicio AND d.fecha_fin
            ORDER BY d.porcentaje DESC
@@ -72,24 +72,24 @@ class PurchaseDAO extends IPurchaseDAO {
 
       const total = Math.max(0, subtotal - descuento_total);
 
-      // 3. Registrar cabecera de orden en COMPRAS
+      // 3. Registrar cabecera de orden en compras
       const [compraResult] = await connection.query(
-        `INSERT INTO COMPRAS (id_usuario, subtotal, descuento_total, total)
+        `INSERT INTO compras (id_usuario, subtotal, descuento_total, total)
          VALUES (?, ?, ?, ?)`,
         [id_usuario, subtotal, descuento_total, total]
       );
       const id_compra = compraResult.insertId;
 
-      // 4. Registrar partidas en DETALLE_COMPRAS y asignar a BIBLIOTECA
+      // 4. Registrar partidas en detalle_compras y asignar a biblioteca
       for (const detail of detailItems) {
         await connection.query(
-          `INSERT INTO DETALLE_COMPRAS (id_compra, id_juego, precio_unitario, descuento_aplicado, precio_final)
+          `INSERT INTO detalle_compras (id_compra, id_juego, precio_unitario, descuento_aplicado, precio_final)
            VALUES (?, ?, ?, ?, ?)`,
           [id_compra, detail.id_juego, detail.precio_unitario, detail.descuento_aplicado, detail.precio_final]
         );
 
         await connection.query(
-          `INSERT INTO BIBLIOTECA (id_usuario, id_juego, id_compra)
+          `INSERT INTO biblioteca (id_usuario, id_juego, id_compra)
            VALUES (?, ?, ?)
            ON DUPLICATE KEY UPDATE id_compra = VALUES(id_compra)`,
           [id_usuario, detail.id_juego, id_compra]
@@ -122,9 +122,9 @@ class PurchaseDAO extends IPurchaseDAO {
       `SELECT c.id_compra, c.fecha_compra, c.subtotal, c.descuento_total, c.total,
               d.id_detalle, d.id_juego, d.precio_unitario, d.descuento_aplicado, d.precio_final,
               j.nombre, j.imagen_url
-       FROM COMPRAS c
-       JOIN DETALLE_COMPRAS d ON c.id_compra = d.id_compra
-       JOIN JUEGOS_REFERENCIA j ON d.id_juego = j.id_juego
+       FROM compras c
+       JOIN detalle_compras d ON c.id_compra = d.id_compra
+       JOIN juegos_referencia j ON d.id_juego = j.id_juego
        WHERE c.id_usuario = ?
        ORDER BY c.fecha_compra DESC`,
       [id_usuario]
@@ -165,10 +165,10 @@ class PurchaseDAO extends IPurchaseDAO {
               u.id_usuario, u.nombre AS usuario_nombre, u.nickname, u.email,
               d.id_detalle, d.id_juego, d.precio_unitario, d.descuento_aplicado, d.precio_final,
               j.nombre AS juego_nombre, j.imagen_url
-       FROM COMPRAS c
-       JOIN USUARIOS u ON c.id_usuario = u.id_usuario
-       JOIN DETALLE_COMPRAS d ON c.id_compra = d.id_compra
-       JOIN JUEGOS_REFERENCIA j ON d.id_juego = j.id_juego
+       FROM compras c
+       JOIN usuarios u ON c.id_usuario = u.id_usuario
+       JOIN detalle_compras d ON c.id_compra = d.id_compra
+       JOIN juegos_referencia j ON d.id_juego = j.id_juego
        ORDER BY c.fecha_compra DESC`
     );
 
@@ -208,25 +208,25 @@ class PurchaseDAO extends IPurchaseDAO {
    * Agrega estadísticas financieras y métricas de desempeño de la plataforma.
    */
   async getAdminMetrics() {
-    const [[rev]] = await pool.query(`SELECT COALESCE(SUM(total), 0) AS total_revenue FROM COMPRAS`);
-    const [[sales]] = await pool.query(`SELECT COUNT(*) AS total_sales FROM COMPRAS`);
+    const [[rev]] = await pool.query(`SELECT COALESCE(SUM(total), 0) AS total_revenue FROM compras`);
+    const [[sales]] = await pool.query(`SELECT COUNT(*) AS total_sales FROM compras`);
     const [[monthRes]] = await pool.query(
       `SELECT COALESCE(SUM(total), 0) AS month_revenue, COUNT(*) AS month_sales
-       FROM COMPRAS
+       FROM compras
        WHERE MONTH(fecha_compra) = MONTH(CURRENT_DATE) AND YEAR(fecha_compra) = YEAR(CURRENT_DATE)`
     );
 
     const [topGames] = await pool.query(
       `SELECT d.id_juego, j.nombre, j.imagen_url, COUNT(d.id_detalle) AS total_vendidos
-       FROM DETALLE_COMPRAS d
-       JOIN JUEGOS_REFERENCIA j ON d.id_juego = j.id_juego
+       FROM detalle_compras d
+       JOIN juegos_referencia j ON d.id_juego = j.id_juego
        GROUP BY d.id_juego, j.nombre, j.imagen_url
        ORDER BY total_vendidos DESC
        LIMIT 1`
     );
 
-    const [[users]] = await pool.query(`SELECT COUNT(*) AS total_users FROM USUARIOS`);
-    const [[disc]] = await pool.query(`SELECT COUNT(*) AS active_discounts FROM DESCUENTOS WHERE CURRENT_DATE BETWEEN fecha_inicio AND fecha_fin`);
+    const [[users]] = await pool.query(`SELECT COUNT(*) AS total_users FROM usuarios`);
+    const [[disc]] = await pool.query(`SELECT COUNT(*) AS active_discounts FROM descuentos WHERE CURRENT_DATE BETWEEN fecha_inicio AND fecha_fin`);
 
     const totalRevenueNum = parseFloat(rev.total_revenue || 0);
     const totalSalesNum = parseInt(sales.total_sales || 0, 10);

@@ -13,7 +13,7 @@ class DiscountDAO extends IDiscountDAO {
       await connection.beginTransaction();
 
       const [result] = await connection.query(
-        `INSERT INTO DESCUENTOS (nombre, descripcion, porcentaje, fecha_inicio, fecha_fin, creado_por)
+        `INSERT INTO descuentos (nombre, descripcion, porcentaje, fecha_inicio, fecha_fin, creado_por)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [nombre, descripcion || null, porcentaje, fecha_inicio, fecha_fin, creado_por]
       );
@@ -22,7 +22,7 @@ class DiscountDAO extends IDiscountDAO {
       if (gameIds && gameIds.length > 0) {
         const values = gameIds.map(id_juego => [id_descuento, id_juego]);
         await connection.query(
-          `INSERT INTO DESCUENTO_JUEGOS (id_descuento, id_juego) VALUES ?`,
+          `INSERT INTO descuento_juegos (id_descuento, id_juego) VALUES ?`,
           [values]
         );
       }
@@ -50,10 +50,10 @@ class DiscountDAO extends IDiscountDAO {
                 WHEN CURRENT_DATE > d.fecha_fin THEN 'Expirada'
                 ELSE 'Activa'
               END AS estado
-       FROM DESCUENTOS d
-       JOIN USUARIOS u ON d.creado_por = u.id_usuario
-       LEFT JOIN DESCUENTO_JUEGOS dj ON d.id_descuento = dj.id_descuento
-       LEFT JOIN JUEGOS_REFERENCIA j ON dj.id_juego = j.id_juego
+       FROM descuentos d
+       JOIN usuarios u ON d.creado_por = u.id_usuario
+       LEFT JOIN descuento_juegos dj ON d.id_descuento = dj.id_descuento
+       LEFT JOIN juegos_referencia j ON dj.id_juego = j.id_juego
        GROUP BY d.id_descuento
        ORDER BY d.creado_en DESC`
     );
@@ -73,8 +73,8 @@ class DiscountDAO extends IDiscountDAO {
   async getAllActiveDiscountsMap() {
     const [rows] = await pool.query(
       `SELECT dj.id_juego, d.id_descuento, d.nombre, d.porcentaje
-       FROM DESCUENTOS d
-       JOIN DESCUENTO_JUEGOS dj ON d.id_descuento = dj.id_descuento
+       FROM descuentos d
+       JOIN descuento_juegos dj ON d.id_descuento = dj.id_descuento
        WHERE CURRENT_DATE BETWEEN d.fecha_inicio AND d.fecha_fin
        ORDER BY d.porcentaje DESC`
     );
@@ -99,8 +99,8 @@ class DiscountDAO extends IDiscountDAO {
   async getActiveDiscountForGame(id_juego) {
     const [rows] = await pool.query(
       `SELECT d.id_descuento, d.nombre, d.porcentaje
-       FROM DESCUENTOS d
-       JOIN DESCUENTO_JUEGOS dj ON d.id_descuento = dj.id_descuento
+       FROM descuentos d
+       JOIN descuento_juegos dj ON d.id_descuento = dj.id_descuento
        WHERE dj.id_juego = ?
          AND CURRENT_DATE BETWEEN d.fecha_inicio AND d.fecha_fin
        ORDER BY d.porcentaje DESC
@@ -115,7 +115,7 @@ class DiscountDAO extends IDiscountDAO {
    */
   async deleteDiscount(id_descuento) {
     const [result] = await pool.query(
-      `DELETE FROM DESCUENTOS WHERE id_descuento = ?`,
+      `DELETE FROM descuentos WHERE id_descuento = ?`,
       [id_descuento]
     );
     return result.affectedRows > 0;

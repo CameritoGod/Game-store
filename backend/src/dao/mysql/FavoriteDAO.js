@@ -19,7 +19,7 @@ class FavoriteDAO extends IFavoriteDAO {
     await this.gameRefDAO.upsert(id_juego, nombre || `Juego #${id_juego}`, imagen_url);
 
     const [result] = await pool.query(
-      `INSERT IGNORE INTO FAVORITOS (id_usuario, id_juego)
+      `INSERT IGNORE INTO favoritos (id_usuario, id_juego)
        VALUES (?, ?)`,
       [id_usuario, id_juego]
     );
@@ -32,7 +32,7 @@ class FavoriteDAO extends IFavoriteDAO {
    */
   async removeFavorite(id_usuario, id_juego) {
     const [result] = await pool.query(
-      `DELETE FROM FAVORITOS
+      `DELETE FROM favoritos
        WHERE id_usuario = ? AND id_juego = ?`,
       [id_usuario, id_juego]
     );
@@ -47,9 +47,9 @@ class FavoriteDAO extends IFavoriteDAO {
       `SELECT f.id_usuario, f.id_juego, f.fecha_agregado,
               j.nombre, j.imagen_url,
               COALESCE(c.precio_actual, 0.00) AS precio
-       FROM FAVORITOS f
-       JOIN JUEGOS_REFERENCIA j ON f.id_juego = j.id_juego
-       LEFT JOIN CATALOGO_JUEGOS c ON f.id_juego = c.id_juego
+       FROM favoritos f
+       JOIN juegos_referencia j ON f.id_juego = j.id_juego
+       LEFT JOIN catalogo_juegos c ON f.id_juego = c.id_juego
        WHERE f.id_usuario = ?
        ORDER BY f.fecha_agregado DESC`,
       [id_usuario]
@@ -62,7 +62,7 @@ class FavoriteDAO extends IFavoriteDAO {
    */
   async isFavorite(id_usuario, id_juego) {
     const [rows] = await pool.query(
-      `SELECT 1 FROM FAVORITOS WHERE id_usuario = ? AND id_juego = ?`,
+      `SELECT 1 FROM favoritos WHERE id_usuario = ? AND id_juego = ?`,
       [id_usuario, id_juego]
     );
     return rows.length > 0;

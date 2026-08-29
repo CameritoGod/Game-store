@@ -11,8 +11,8 @@ class UserDAO extends IUserDAO {
   async findById(id_usuario) {
     const [rows] = await pool.query(
       `SELECT u.id_usuario, u.id_rol, r.nombre AS rol, u.nombre, u.nickname, u.email, u.avatar_url, u.creado_en
-       FROM USUARIOS u
-       JOIN ROLES r ON u.id_rol = r.id_rol
+       FROM usuarios u
+       JOIN roles r ON u.id_rol = r.id_rol
        WHERE u.id_usuario = ?`,
       [id_usuario]
     );
@@ -25,8 +25,8 @@ class UserDAO extends IUserDAO {
   async findByEmail(email) {
     const [rows] = await pool.query(
       `SELECT u.*, r.nombre AS rol
-       FROM USUARIOS u
-       JOIN ROLES r ON u.id_rol = r.id_rol
+       FROM usuarios u
+       JOIN roles r ON u.id_rol = r.id_rol
        WHERE u.email = ?`,
       [email]
     );
@@ -39,8 +39,8 @@ class UserDAO extends IUserDAO {
   async findByNickname(nickname) {
     const [rows] = await pool.query(
       `SELECT u.*, r.nombre AS rol
-       FROM USUARIOS u
-       JOIN ROLES r ON u.id_rol = r.id_rol
+       FROM usuarios u
+       JOIN roles r ON u.id_rol = r.id_rol
        WHERE u.nickname = ?`,
       [nickname]
     );
@@ -53,7 +53,7 @@ class UserDAO extends IUserDAO {
   async create(userData) {
     const { id_rol = 2, nombre, nickname, email, password, avatar_url = null } = userData;
     const [result] = await pool.query(
-      `INSERT INTO USUARIOS (id_rol, nombre, nickname, email, password, avatar_url)
+      `INSERT INTO usuarios (id_rol, nombre, nickname, email, password, avatar_url)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [id_rol, nombre, nickname, email, password, avatar_url]
     );
@@ -67,7 +67,7 @@ class UserDAO extends IUserDAO {
   async updateProfile(id_usuario, profileData) {
     const { nombre, nickname } = profileData;
     await pool.query(
-      `UPDATE USUARIOS
+      `UPDATE usuarios
        SET nombre = ?, nickname = ?
        WHERE id_usuario = ?`,
       [nombre, nickname, id_usuario]
@@ -80,7 +80,7 @@ class UserDAO extends IUserDAO {
    */
   async updatePassword(id_usuario, hashedPassword) {
     const [result] = await pool.query(
-      `UPDATE USUARIOS
+      `UPDATE usuarios
        SET password = ?
        WHERE id_usuario = ?`,
       [hashedPassword, id_usuario]
@@ -93,7 +93,7 @@ class UserDAO extends IUserDAO {
    */
   async updateAvatar(id_usuario, avatar_url) {
     await pool.query(
-      `UPDATE USUARIOS
+      `UPDATE usuarios
        SET avatar_url = ?
        WHERE id_usuario = ?`,
       [avatar_url, id_usuario]
@@ -107,7 +107,7 @@ class UserDAO extends IUserDAO {
    */
   async setResetToken(email, tokenHash, expiresDate) {
     const [result] = await pool.query(
-      `UPDATE USUARIOS
+      `UPDATE usuarios
        SET reset_token_hash = ?, reset_expires = ?
        WHERE email = ?`,
       [tokenHash, expiresDate, email]
@@ -120,7 +120,7 @@ class UserDAO extends IUserDAO {
    */
   async findByResetToken(tokenHash) {
     const [rows] = await pool.query(
-      `SELECT * FROM USUARIOS
+      `SELECT * FROM usuarios
        WHERE reset_token_hash = ? AND reset_expires > NOW()`,
       [tokenHash]
     );
@@ -132,7 +132,7 @@ class UserDAO extends IUserDAO {
    */
   async verifyResetCode(email, tokenHash) {
     const [rows] = await pool.query(
-      `SELECT * FROM USUARIOS
+      `SELECT * FROM usuarios
        WHERE email = ? AND reset_token_hash = ? AND reset_expires > NOW()`,
       [email, tokenHash]
     );
@@ -145,8 +145,8 @@ class UserDAO extends IUserDAO {
   async getAllUsers() {
     const [rows] = await pool.query(
       `SELECT u.id_usuario, u.nombre, u.nickname, u.email, u.avatar_url, r.nombre AS rol, u.creado_en
-       FROM USUARIOS u
-       JOIN ROLES r ON u.id_rol = r.id_rol
+       FROM usuarios u
+       JOIN roles r ON u.id_rol = r.id_rol
        ORDER BY u.creado_en DESC`
     );
     return rows;

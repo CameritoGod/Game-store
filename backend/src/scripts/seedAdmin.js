@@ -18,8 +18,8 @@ async function seedAdmin() {
     // 1. Verificar si ya existe un usuario administrador
     const [existingUsers] = await pool.query(
       `SELECT u.id_usuario, u.email, r.nombre AS rol
-       FROM USUARIOS u
-       JOIN ROLES r ON u.id_rol = r.id_rol
+       FROM usuarios u
+       JOIN roles r ON u.id_rol = r.id_rol
        WHERE u.email = ? OR u.id_rol = 1 OR u.nickname = ?`,
       [adminEmail, adminNickname]
     );
@@ -34,7 +34,7 @@ async function seedAdmin() {
 
     // 3. Insertar el usuario Administrador (id_rol = 1)
     const [result] = await pool.query(
-      `INSERT INTO USUARIOS (id_rol, nombre, nickname, email, password)
+      `INSERT INTO usuarios (id_rol, nombre, nickname, email, password)
        VALUES (?, ?, ?, ?, ?)`,
       [1, adminNombre, adminNickname, adminEmail, hashedPassword]
     );

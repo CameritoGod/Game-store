@@ -10,7 +10,7 @@ class GameReferenceDAO extends IGameReferenceDAO {
    */
   async upsert(id_juego, nombre, imagen_url) {
     const [result] = await pool.query(
-      `INSERT INTO JUEGOS_REFERENCIA (id_juego, nombre, imagen_url)
+      `INSERT INTO juegos_referencia (id_juego, nombre, imagen_url)
        VALUES (?, ?, ?)
        ON DUPLICATE KEY UPDATE
          nombre = VALUES(nombre),
@@ -25,7 +25,7 @@ class GameReferenceDAO extends IGameReferenceDAO {
    */
   async findById(id_juego) {
     const [rows] = await pool.query(
-      `SELECT * FROM JUEGOS_REFERENCIA WHERE id_juego = ?`,
+      `SELECT * FROM juegos_referencia WHERE id_juego = ?`,
       [id_juego]
     );
     return rows[0] || null;
@@ -36,7 +36,7 @@ class GameReferenceDAO extends IGameReferenceDAO {
    */
   async findAll() {
     const [rows] = await pool.query(
-      `SELECT * FROM JUEGOS_REFERENCIA ORDER BY nombre ASC`
+      `SELECT * FROM juegos_referencia ORDER BY nombre ASC`
     );
     return rows;
   }
