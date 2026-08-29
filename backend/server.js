@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const sanitizeMiddleware = require('./src/middleware/sanitizeMiddleware');
 const { globalLimiter } = require('./src/middleware/rateLimiterMiddleware');
+const { startKeepAlive } = require('./src/utils/keepAlive');
 
 const gamesRoutes = require('./src/routes/games.routes');
 const authRoutes = require('./src/routes/auth.routes');
@@ -29,6 +30,7 @@ app.use(helmet({
 app.use(hpp());
 
 // Configuración dinámica de CORS para desarrollo y producción
+// Normalizar orígenes desde variables de entorno
 const rawOrigins = process.env.FRONTEND_URL || process.env.CLIENT_URL || '';
 const configuredOrigins = rawOrigins
   ? rawOrigins.split(',').map(url => url.trim().replace(/\/$/, '')).filter(Boolean)
@@ -41,15 +43,26 @@ const defaultDevOrigins = [
   'http://127.0.0.1:3000'
 ];
 
-const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : defaultDevOrigins;
+// Combinar siempre desarrollo con los orígenes configurados
+const allowedOrigins = [...defaultDevOrigins, ...configuredOrigins];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir peticiones sin origen (móviles/Postman/curl) o que coincidan con orígenes autorizados
-    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+    // Permitir peticiones sin origin (Postman, curl, health checks, cron jobs)
+    if (!origin) return callback(null, true);
+
+    // Permitir si coincide exactamente con la lista
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
       return callback(null, true);
     }
-    return callback(new Error('Acceso no permitido por política de CORS'));
+
+    // Permitir cualquier previsualización de Vercel
+    if (/^https:\/\/.*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Rechazar sin disparar una excepción no controlada
+    return callback(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Client-ID'],
@@ -84,4 +97,5 @@ app.use(errorHandler);
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  startKeepAlive();
 });

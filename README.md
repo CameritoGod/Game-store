@@ -223,6 +223,11 @@ npm run dev
 
 Abre tu navegador en `http://localhost:5173`.
 
+### ☁️ Despliegue en Render (Mitigación de Cold Start)
+El backend incluye un servicio integrado ultra liviano de **Keep-Alive** (`src/utils/keepAlive.js`) basado en los módulos nativos `https`/`http` de Node.js (0 dependencias externas, 0 consumo de CPU).
+- Cuando el backend se despliega en Render, detecta automáticamente la variable de entorno del sistema `RENDER_EXTERNAL_URL`.
+- Envía un ping periódico cada **14 minutos** al endpoint `/api/health`, evitando que el Web Service entre en modo de suspensión (*Cold Start*) por inactividad de 15 minutos en el plan gratuito.
+
 ---
 
 ## 📂 Estructura del Repositorio

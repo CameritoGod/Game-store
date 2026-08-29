@@ -1,4 +1,6 @@
 const mysql = require('mysql2/promise');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const dbConfig = {
@@ -10,7 +12,12 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  multipleStatements: true
+  multipleStatements: true,
+  ssl: {
+    ca: process.env.DB_CA_CERT 
+      ? process.env.DB_CA_CERT 
+      : fs.readFileSync(path.join(__dirname, '../../../database/ca.pem'))
+  }
 };
 
 const pool = mysql.createPool(dbConfig);
