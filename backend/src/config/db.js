@@ -3,6 +3,25 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+// Resolver la ruta del certificado CA (busca en backend/ca.pem o la raíz)
+const resolveCert = () => {
+  if (process.env.DB_CA_CERT) return process.env.DB_CA_CERT;
+  
+  const possiblePaths = [
+    path.join(__dirname, '../ca.pem'),
+    path.join(__dirname, '../../ca.pem'),
+    path.join(__dirname, '../../../database/ca.pem'),
+    path.join(process.cwd(), 'ca.pem')
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) return fs.readFileSync(p);
+  }
+  return undefined;
+};
+
+const cert = resolveCert();
+
 const dbConfig = {
   host: process.env.DB_HOST || '127.0.0.1',
   user: process.env.DB_USER || 'root',
@@ -13,22 +32,22 @@ const dbConfig = {
   connectionLimit: 10,
   queueLimit: 0,
   multipleStatements: true,
-  ssl: {
-    ca: process.env.DB_CA_CERT 
-      ? process.env.DB_CA_CERT 
-      : fs.readFileSync(path.join(__dirname, '../../../database/ca.pem'))
-  }
+  ...(cert && {
+    ssl: {
+      ca: cert,
+      rejectUnauthorized: true
+    }
+  })
 };
 
 const pool = mysql.createPool(dbConfig);
 
-// Función para inicializar tablas y datos por defecto si es necesario
+// Inicializar y verificar conexión
 async function initDB() {
   try {
     const connection = await pool.getConnection();
-    console.log('✅ Conexión exitosa a la Base de Datos MySQL');
+    console.log('✅ Conexión exitosa a la Base de Datos MySQL en Aiven');
 
-    // Asegurar que existan los roles base
     await connection.query(`
       CREATE TABLE IF NOT EXISTS ROLES (
         id_rol INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -36,7 +55,6 @@ async function initDB() {
       ) ENGINE=InnoDB;
     `);
 
-    // Insertar roles iniciales si no existen
     await connection.query(`
       INSERT INTO ROLES (id_rol, nombre) VALUES (1, 'admin'), (2, 'cliente')
       ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
@@ -48,7 +66,6 @@ async function initDB() {
   }
 }
 
-// Iniciar verificación en segundo plano al importar
 initDB();
 
 module.exports = pool;
